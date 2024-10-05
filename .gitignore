@@ -1,0 +1,9 @@
+.vscode
+main.cpp
+*.out
+*.exe
+*.dll
+*.ld
+*.dyn
+*.o
+*.swp
