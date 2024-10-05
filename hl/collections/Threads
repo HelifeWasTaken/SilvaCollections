@@ -1,5 +1,5 @@
 /**
- * hl/SilvaCollections/ThreadList
+ * hl/collections/Threads
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -37,6 +37,10 @@ namespace hl
 {
 namespace silva 
 {
+namespace collections
+{
+namespace threads
+{
 
 #ifndef SILVA_THREAD_LIST_DEFAULT_SIZE
 #define SILVA_THREAD_LIST_DEFAULT_SIZE 20
@@ -45,7 +49,7 @@ namespace silva
 /**
  * @brief SilvaThreadList
  */
-class ThreadList
+class BasicService
 {
 private:
     std::vector<std::thread> _threads;
@@ -84,10 +88,10 @@ private:
 public:
 
     /**
-     * @brief SilvaThreadList
+     * @brief BasicService
      * @param size Number that can be used concurrently in this space
      */
-    ThreadList(const std::size_t& size=SILVA_THREAD_LIST_DEFAULT_SIZE)
+    BasicService(const std::size_t& size=SILVA_THREAD_LIST_DEFAULT_SIZE)
     {
         this->_threads.reserve(size);
 
@@ -150,10 +154,10 @@ public:
     }
 
     /**
-     * @brief ~SilvaThreadList
+     * @brief ~BasicService
      * Stops all threads and joins them
      */
-    ~ThreadList()
+    ~BasicService()
     {
         join();
         _running = false;
@@ -236,7 +240,7 @@ public:
 /**
  * @brief GPUThreadSim A class that simulates the behavior of a GPU (inspired by CUDA)
  */
-class GPUThreadSim
+class GPUSim
 {
 public:
     /**
@@ -359,14 +363,14 @@ public:
     static inline constexpr ThreadIndex ZYX(const ThreadIndex& index) { return ThreadIndex(index.z, index.y, index.x); };
 
 private:
-    ThreadList _thread_list;
+    BasicService _thread_list;
 
 public:
     /**
      * @brief GPUThreadSim
      * @param thread_count The number of threads that can be used concurrently
      */
-    GPUThreadSim(unsigned int thread_count=SILVA_THREAD_LIST_DEFAULT_SIZE)
+    GPUSim(unsigned int thread_count=SILVA_THREAD_LIST_DEFAULT_SIZE)
         : _thread_list(thread_count)
     {}
 
@@ -417,7 +421,7 @@ public:
      * @brief Join all threads stop the simulation and wait until all tasks have finished
      * @return void
      */
-    ~GPUThreadSim()
+    ~GPUSim()
     {
         _thread_list.stop(false);
         join();
@@ -443,5 +447,7 @@ public:
     }
 };
 
+}
+}
 }
 }

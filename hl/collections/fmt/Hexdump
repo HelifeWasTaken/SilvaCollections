@@ -11,7 +11,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 */
 
 /**
- * hl/SilvaCollections/Hexdump
+ * hl/collections/Hexdump
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -41,11 +41,15 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <cctype>
 #include <iomanip>
 #include <ostream>
-#include <hl/SilvaCollections/StdInt>
+#include <hl/collections/StdInt>
 
 namespace hl
 {
 namespace silva
+{
+namespace collections
+{
+namespace fmt
 {
 
 /**
@@ -120,5 +124,7 @@ struct HexdumpConfig
 
 using Hexdump = HexdumpConfig<16, true>;
 
+}
+}
 }
 }

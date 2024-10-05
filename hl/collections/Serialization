@@ -1,5 +1,5 @@
 /**
- * hl/SilvaCollections/Serializer
+ * hl/collections/Serialization
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -22,9 +22,9 @@
  */
 #pragma once
 
-#include <hl/SilvaCollections/StdInt>
-#include <hl/SilvaCollections/Bit>
-#include <hl/SilvaCollections/Meta>
+#include <hl/collections/StdInt>
+#include <hl/collections/Bit>
+#include <hl/collections/Meta>
 
 #include <vector>
 #include <string>
@@ -41,6 +41,10 @@ namespace hl
 {
 namespace silva
 {
+namespace collections
+{
+namespace serialization
+{
 
 using byte_vector = std::vector<byte>;
 
@@ -50,7 +54,7 @@ using byte_vector = std::vector<byte>;
 // Array: [BYTE_ARRAY_TYPE][size][data]
 // Other: [TYPE][data]
 // All sizes and types that validate std::is_arithmetic_v<T> are in network byte order
-namespace serializer_metadata
+namespace metadata 
 {
 
     using TypeValue = std::variant<u8, u16, u32, u64, i8, i16, i32, i64, f32, f64, bool8, std::string, byte_vector, nullptr_t>;
@@ -193,7 +197,7 @@ class Serializer
 {
 private:
     byte_vector m_buffer;
-    serializer_metadata::MagicNumber m_magic;
+    serialization::metadata::MagicNumber m_magic;
 
 public:
     Serializer() = default;
@@ -203,14 +207,14 @@ public:
     Serializer& operator=(const Serializer& other) = default;
     Serializer& operator=(Serializer&& other) = default;
 
-    Serializer(const serializer_metadata::MagicNumber& magic)
+    Serializer(const serialization::metadata::MagicNumber& magic)
         : m_magic(magic)
     {}
 
     ~Serializer() = default;
 
 private:
-    template<typename T, serializer_metadata::TypeChart CTYPE>
+    template<typename T, serialization::metadata::TypeChart CTYPE>
     Serializer& _serialize_arithmetic_inplace(const T& value)
     {
         m_buffer.push_back(CTYPE);
@@ -219,7 +223,7 @@ private:
         return *this;
     }
 
-    template<typename T, serializer_metadata::TypeChart CTYPE>
+    template<typename T, serialization::metadata::TypeChart CTYPE>
     Serializer& _serialize_array_inplace(const T& value)
     {
         m_buffer.push_back(CTYPE);
@@ -233,7 +237,7 @@ private:
 public:
 
 #define __SILVA_SERIALIZER_MAKE_OPERATOR_MANUAL(CTYPE, FUNC_NAME, TYPE_CHART, OPERATION_TYPE) \
-    Serializer& operator<<(const CTYPE& value) { return _serialize_##OPERATION_TYPE##_inplace<CTYPE, serializer_metadata::TypeChart::TYPE_CHART>(value); } \
+    Serializer& operator<<(const CTYPE& value) { return _serialize_##OPERATION_TYPE##_inplace<CTYPE, serialization::metadata::TypeChart::TYPE_CHART>(value); } \
     Serializer& operator<<(CTYPE&& value)      { return *this << value; } \
     Serializer& serialize_##FUNC_NAME(const CTYPE& value) { return *this << value; } \
 
@@ -268,7 +272,7 @@ public:
     __SILVA_SERIALIZER_MAKE_OPERATOR_STD_BYTE_ARRAYS(BYTE_ARRAY, byte_vector, byte_array);
 
     __SILVA_SERIALIZER_MAKE_OPERATOR_MANUAL_WITH_OP(char *, cstring, *this << std::string(value));
-    __SILVA_SERIALIZER_MAKE_OPERATOR_MANUAL_WITH_OP(serializer_metadata::TypeValue, type_value, std::visit([&](auto&& arg) { *this << arg; }, value));
+    __SILVA_SERIALIZER_MAKE_OPERATOR_MANUAL_WITH_OP(serialization::metadata::TypeValue, type_value, std::visit([&](auto&& arg) { *this << arg; }, value));
 
     // wildcard section
     template<typename T>
@@ -292,8 +296,8 @@ public:
     {
         byte_vector buffer = m_buffer;
 
-        buffer.push_back(serializer_metadata::TypeChart::END);
-        serializer_metadata::HeaderByteArray header = serializer_metadata::make_header(m_magic, buffer.size());
+        buffer.push_back(serialization::metadata::TypeChart::END);
+        serialization::metadata::HeaderByteArray header = serialization::metadata::make_header(m_magic, buffer.size());
 
         buffer.insert(buffer.begin(), header.begin(), header.end());
 
@@ -314,28 +318,28 @@ public:
 
     Deserializer(const byte_vector& buffer,
                 byte_vector& rest_buffer,
-                const serializer_metadata::MagicNumber &expected_magic=serializer_metadata::MagicNumber())
+                const serialization::metadata::MagicNumber &expected_magic=serialization::metadata::MagicNumber())
         : m_buffer(buffer)
     {
-        serializer_metadata::HeaderSizeType size;
-        serializer_metadata::MagicNumber magic;
+        serialization::metadata::HeaderSizeType size;
+        serialization::metadata::MagicNumber magic;
 
-        serializer_metadata::load_header(buffer, magic, size);
+        serialization::metadata::load_header(buffer, magic, size);
 
         if (magic.v32 != expected_magic.v32)
         {
-            auto p = serializer_metadata::MagicNumber();
+            auto p = serialization::metadata::MagicNumber();
             throw std::runtime_error("Magic number does not match the expected magic number");
         }
 
-        m_index = serializer_metadata::HEADER_SIZE;
+        m_index = serialization::metadata::HEADER_SIZE;
 
         if (m_index + size > m_buffer.size())
         {
             throw std::runtime_error("Buffer is too small to contain the data");
         }
 
-        if (m_buffer[m_index + size - sizeof(serializer_metadata::TypeChart)] != serializer_metadata::TypeChart::END)
+        if (m_buffer[m_index + size - sizeof(serialization::metadata::TypeChart)] != serialization::metadata::TypeChart::END)
         {
             throw std::runtime_error("Missing END marker");
         }
@@ -359,10 +363,10 @@ public:
     Deserializer& operator=(Deserializer&& other) = default;
 
 private:
-    template<typename T, serializer_metadata::TypeChart CTYPE>
+    template<typename T, serialization::metadata::TypeChart CTYPE>
     Deserializer& _deserialize_inplace_arithmetic(T& value)
     {
-        static const size_t MINIMUM_SIZE = sizeof(serializer_metadata::TypeChart) + sizeof(T);
+        static const size_t MINIMUM_SIZE = sizeof(serialization::metadata::TypeChart) + sizeof(T);
 
         if (m_index + MINIMUM_SIZE > m_buffer.size())
         {
@@ -373,8 +377,8 @@ private:
             throw std::runtime_error("Type does not match the expected type");
         }
 
-        value = *reinterpret_cast<T*>(&m_buffer[m_index + sizeof(serializer_metadata::TypeChart)]);
-        m_index += sizeof(serializer_metadata::TypeChart) + sizeof(T);
+        value = *reinterpret_cast<T*>(&m_buffer[m_index + sizeof(serialization::metadata::TypeChart)]);
+        m_index += sizeof(serialization::metadata::TypeChart) + sizeof(T);
 
         // avoid making conversion for single byte types
         if constexpr (std::is_arithmetic_v<T> && sizeof(T) > 1)
@@ -383,10 +387,10 @@ private:
         return *this;
     }
 
-    template<typename T, serializer_metadata::TypeChart CTYPE>
+    template<typename T, serialization::metadata::TypeChart CTYPE>
     Deserializer& _deserialize_inplace_array(T& value)
     {
-        static const size_t MINIMUM_SIZE = sizeof(serializer_metadata::TypeChart) + sizeof(serializer_metadata::SizeType);
+        static const size_t MINIMUM_SIZE = sizeof(serialization::metadata::TypeChart) + sizeof(serialization::metadata::SizeType);
 
         if (m_index + MINIMUM_SIZE > m_buffer.size())
         {
@@ -397,7 +401,7 @@ private:
             throw std::runtime_error("Type does not match the expected type");
         }
 
-        serializer_metadata::SizeType size = *reinterpret_cast<serializer_metadata::SizeType*>(&m_buffer[m_index + sizeof(serializer_metadata::TypeChart)]);
+        serialization::metadata::SizeType size = *reinterpret_cast<serialization::metadata::SizeType*>(&m_buffer[m_index + sizeof(serialization::metadata::TypeChart)]);
         bit::network_to_native_inplace(size);
 
         if (m_index + size + MINIMUM_SIZE > m_buffer.size())
@@ -416,8 +420,8 @@ private:
 
 public:
 #define __SILVA_DESERIALIZER_OPERATOR_NAMED(CTYPE, METADATA_TYPE, member_func_name, method_type) \
-    CTYPE get_##member_func_name() { CTYPE value; _deserialize_inplace_##method_type<CTYPE, serializer_metadata::TypeChart::METADATA_TYPE>(value); return value; } \
-    Deserializer& operator>>(CTYPE& value) { return _deserialize_inplace_##method_type<CTYPE, serializer_metadata::TypeChart::METADATA_TYPE>(value); } \
+    CTYPE get_##member_func_name() { CTYPE value; _deserialize_inplace_##method_type<CTYPE, serialization::metadata::TypeChart::METADATA_TYPE>(value); return value; } \
+    Deserializer& operator>>(CTYPE& value) { return _deserialize_inplace_##method_type<CTYPE, serialization::metadata::TypeChart::METADATA_TYPE>(value); } \
     Deserializer& get_##member_func_name##_inplace(CTYPE& value) { return *this >> value; }
 
 #define __SILVA_DESERIALIZER_OPERATOR_CTYPE_ARITHMETIC(CTYPE, METADATA_TYPE) \
@@ -449,16 +453,16 @@ public:
 #undef __SILVA_DESERIALIZER_OPERATOR_CTYPE_ARITHMETIC
 #undef __SILVA_DESERIALIZER_OPERATOR_CTYPE_UNIMPLEMENTED
 
-    Deserializer& operator>>(serializer_metadata::TypeValue& value)
+    Deserializer& operator>>(serialization::metadata::TypeValue& value)
     {
-        if (m_index + sizeof(serializer_metadata::TypeChart) > m_buffer.size())
+        if (m_index + sizeof(serialization::metadata::TypeChart) > m_buffer.size())
         {
             throw std::runtime_error("Buffer is too small to contain the value");
         }
-        switch ((serializer_metadata::TypeChart)m_buffer[m_index])
+        switch ((serialization::metadata::TypeChart)m_buffer[m_index])
         {
             #define __SILVA_DESERIALIZER_SWITCH_CASE_TYPE_VALUE(TYPE, CTYPE) \
-            case serializer_metadata::TypeChart::TYPE: { \
+            case serialization::metadata::TypeChart::TYPE: { \
                 value = get_##CTYPE(); \
                 break; \
             }
@@ -479,9 +483,9 @@ public:
 
             #undef __SILVA_DESERIALIZER_SWITCH_CASE_TYPE_VALUE
 
-            case serializer_metadata::TypeChart::END:
+            case serialization::metadata::TypeChart::END:
                 value = nullptr;
-                m_index += sizeof(serializer_metadata::TypeChart);
+                m_index += sizeof(serialization::metadata::TypeChart);
                 break;
 
             default:
@@ -491,9 +495,9 @@ public:
         return *this;
     }
 
-    serializer_metadata::TypeValue get_type_value()
+    serialization::metadata::TypeValue get_type_value()
     {
-        serializer_metadata::TypeValue value;
+        serialization::metadata::TypeValue value;
         *this >> value;
         return value;
     }
@@ -528,7 +532,7 @@ public:
     {
     private:
         Deserializer &_deserializer;
-        serializer_metadata::TypeValue _last_value;
+        serialization::metadata::TypeValue _last_value;
         std::size_t _index;
         const std::size_t _original_index;
 
@@ -539,7 +543,7 @@ public:
             , _original_index(deserializer.get_index())
         {
             if (_index == 0) {
-                _index = serializer_metadata::HEADER_SIZE;
+                _index = serialization::metadata::HEADER_SIZE;
             }
         }
 
@@ -588,12 +592,12 @@ public:
         iterable operator-(const std::size_t& value) = delete;
         iterable operator-=(const std::size_t& value) = delete;
 
-        serializer_metadata::TypeValue operator*()
+        serialization::metadata::TypeValue operator*()
         {
             return _last_value;
         }
 
-        const serializer_metadata::TypeValue &operator*() const
+        const serialization::metadata::TypeValue &operator*() const
         {
             return _last_value;
         }
@@ -612,16 +616,18 @@ public:
 
 }
 }
+}
+}
 
 namespace std
 {
-    std::string to_string(const hl::silva::serializer_metadata::TypeChart &type)
+    std::string to_string(const hl::silva::collections::serialization::metadata::TypeChart &type)
     {
-        return hl::silva::serializer_metadata::to_string(type);
+        return hl::silva::collections::serialization::metadata::to_string(type);
     }
 
-    std::string to_string(const hl::silva::serializer_metadata::TypeValue &value)
+    std::string to_string(const hl::silva::collections::serialization::metadata::TypeValue &value)
     {
-        return hl::silva::serializer_metadata::to_string(value);
+        return hl::silva::collections::serialization::metadata::to_string(value);
     }
 }
