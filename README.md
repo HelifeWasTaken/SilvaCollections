@@ -413,11 +413,14 @@ int main()
 
     hl::silva::GPUThreadSim thread_list;
     hl::silva::u8** images_out = new hl::silva::u8*[image_count];
+    for (hl::silva::u32 i = 0; i < image_count; i++)
+    {
+        images_out[i] = new hl::silva::u8[width * height * channels];
+    }
 
     // Divide the image into 32 x 32 squares and run the rotation in parallel.
     // Ensure that the image is divisible by 32.
     // We will not handle the case where the image is not divisible by 32.
-
 
     const hl::silva::u32 square_count = (width / square_size) * (height / square_size);
 
@@ -471,7 +474,14 @@ int main()
 
     thread_list.join();
 
-    stbi_write_png("image_out.png", width, height, channels, image_out, width * channels);
+    for (hl::silva::u32 i = 0; i < image_count; i++)
+    {
+        const std::string file_name = "image" + std::to_string(i) + "_out.png";
+        stbi_write_png(file_name.c_str(), width, height, channels, images_out[i], width * channels);
+        stbi_image_free(images[i]);
+        delete[] images_out[i];
+    }
+
     stbi_image_free(image);
     delete[] image_out;
 
