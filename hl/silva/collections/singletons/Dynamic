@@ -1,5 +1,5 @@
 /**
- * hl/silva/collections.hpp
+ * hl/silva/collections/singletons/Dynamic
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -23,11 +23,52 @@
 
 #pragma once
 
-#include <hl/silva/collections/Atomic>
-#include <hl/silva/collections/Bit>
-#include <hl/silva/collections/Fmt>
-#include <hl/silva/collections/Meta>
-#include <hl/silva/collections/Serialization>
-#include <hl/silva/collections/Singleton>
-#include <hl/silva/collections/StdInt>
-#include <hl/silva/collections/Threads>
+#include <hl/silva/collections/singletons/_base>
+
+namespace hl
+{
+namespace silva
+{
+namespace collections
+{
+namespace singletons
+{
+
+template <typename T>
+class Dynamic : public _SingletonBase
+{
+private:
+    [[nodiscard]] static T* manage_ptr(T* instance = nullptr, bool set = false) {
+        static T *s_instance = nullptr;
+
+        if (set) {
+            if (s_instance) {
+                delete s_instance;
+            }
+            s_instance = instance;
+        }
+        return s_instance;
+    }
+
+public:
+    [[nodiscard]] static T& get() {
+        return *manage_ptr();
+    }
+
+    static void destroy() {
+        manage_ptr(nullptr, true);
+    }
+
+    static void set(T* instance) {
+        manage_ptr(instance, true);
+    }
+
+    virtual ~Dynamic() override final {
+        destroy();
+    }
+};
+
+}
+}
+}
+}

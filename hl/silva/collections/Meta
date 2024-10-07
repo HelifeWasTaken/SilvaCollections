@@ -119,7 +119,6 @@ namespace meta
         virtual ~NonDestructible() = delete;
     };
 
-
     /**
      * @brief Enable when arithmetic
      */

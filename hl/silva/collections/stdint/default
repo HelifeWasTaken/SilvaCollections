@@ -1,5 +1,5 @@
 /**
- * hl/silva/collections/StdInt
+ * hl/silva/collections/stdint/default
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -23,6 +23,31 @@
 
 #pragma once
 
-#include <hl/silva/collections/stdint/default>
-#include <hl/silva/collections/stdint/ext>
-// #include <hl/silva/collections/stdint/typedef>
+#include <hl/silva/collections/stdint/_base>
+
+namespace hl
+{
+namespace silva
+{
+namespace collections
+{
+namespace stdint
+{
+
+using u8    = std::uint8_t;
+using u16   = std::uint16_t;
+using u32   = std::uint32_t;
+using u64   = std::uint64_t;
+using i8    = std::int8_t;
+using i16   = std::int16_t;
+using i32   = std::int32_t;
+using i64   = std::int64_t;
+using f32   = float;
+using f64   = double;
+using bool8 = bool;
+using size_t = std::size_t;
+
+}
+}
+}
+}

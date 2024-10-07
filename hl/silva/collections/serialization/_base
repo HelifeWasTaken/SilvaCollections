@@ -1,5 +1,5 @@
 /**
- * hl/silva/collections/StdInt
+ * hl/silva/collections/serialization/_base
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -23,6 +23,36 @@
 
 #pragma once
 
-#include <hl/silva/collections/stdint/default>
-#include <hl/silva/collections/stdint/ext>
-// #include <hl/silva/collections/stdint/typedef>
+
+#include <hl/silva/collections/StdInt>
+#include <hl/silva/collections/Bit>
+#include <hl/silva/collections/Meta>
+
+#include <vector>
+#include <stdexcept>
+#include <array>
+#include <string>
+
+namespace hl
+{
+namespace silva
+{
+namespace collections
+{
+namespace serialization
+{
+
+using byte_vector = std::vector<stdint::byte>;
+
+class Error : public std::runtime_error
+{
+public:
+    Error(const std::string& message)
+        : std::runtime_error(message)
+    {}
+};
+
+}
+}
+}
+}

@@ -53,7 +53,7 @@ namespace fmt
  * @brief HexdumpConfig
  * @details A configuration for the hexdump
  */
-template <u16 RowSize, bool8 ShowAscii = true>
+template <stdint::u16 RowSize, stdint::bool8 ShowAscii = true>
 struct HexdumpConfig
 {
     /**
@@ -61,11 +61,11 @@ struct HexdumpConfig
      * @param  data: The data to dump
      * @param  length: The length of the data
      */
-    HexdumpConfig(const void *data, const u64 &length) :
-        m_data(static_cast<const byte *>(data)), m_length(length) { }
+    HexdumpConfig(const void *data, const stdint::size_t &length) :
+        m_data(static_cast<const stdint::byte *>(data)), m_length(length) { }
 
-    const byte *m_data;
-    const u64 m_length;
+    const stdint::byte *m_data;
+    const stdint::size_t m_length;
 
     /**
      * @brief Print the hexdump
@@ -75,14 +75,14 @@ struct HexdumpConfig
     std::ostream &print(std::ostream &out) const
     {
         out.fill('0');
-        for (u64 i = 0; i < m_length; i += RowSize)
+        for (stdint::size_t i = 0; i < m_length; i += RowSize)
         {
             out << "0x" << std::setw(6) << std::hex << i << ": ";
-            for (u64 j = 0; j < RowSize; ++j)
+            for (stdint::size_t j = 0; j < RowSize; ++j)
             {
                 if (i + j < m_length)
                 {
-                    out << std::hex << std::setw(2) << static_cast<i16>(m_data[i + j]) << " ";
+                    out << std::hex << std::setw(2) << static_cast<stdint::u16>(m_data[i + j]) << " ";
                 }
                 else
                 {
@@ -93,7 +93,7 @@ struct HexdumpConfig
             if constexpr (ShowAscii)
             {
                 out << " ";
-                for (u64 j = 0; j < RowSize; ++j)
+                for (stdint::size_t j = 0; j < RowSize; ++j)
                 {
                     if (i + j < m_length)
                     {
@@ -132,7 +132,7 @@ namespace std
      * @tparam ShowAscii: Show the ascii
      * @retval The output stream
      */
-    template<u16 RowSize, bool8 ShowAscii>
+    template<hl::silva::collections::stdint::u16 RowSize, hl::silva::collections::stdint::bool8 ShowAscii>
     inline std::ostream& operator<<(std::ostream& out, const hl::silva::collections::fmt::HexdumpConfig<RowSize, ShowAscii> &dump)
     {
         return dump.print(out);

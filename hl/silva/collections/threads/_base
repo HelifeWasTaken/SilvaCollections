@@ -1,5 +1,5 @@
 /**
- * hl/silva/collections/StdInt
+ * hl/silva/collections/threads/_base
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -23,6 +23,15 @@
 
 #pragma once
 
-#include <hl/silva/collections/stdint/default>
-#include <hl/silva/collections/stdint/ext>
-// #include <hl/silva/collections/stdint/typedef>
+#include <vector>
+#include <thread>
+#include <functional>
+#include <mutex>
+#include <queue>
+#include <atomic>
+// TODO add condition variable for better performance
+// #include <condition_variable>
+
+#ifndef SILVA_THREAD_LIST_DEFAULT_SIZE
+#define SILVA_THREAD_LIST_DEFAULT_SIZE 20
+#endif

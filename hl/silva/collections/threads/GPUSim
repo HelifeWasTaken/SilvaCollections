@@ -1,0 +1,250 @@
+/**
+ * hl/silva/collections/threads/GPUSim
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * 
+ * Made by: Mattis DALLEAU
+ */
+
+#pragma once
+
+#include <hl/silva/collections/threads/BasicService>
+
+namespace hl
+{
+namespace silva
+{
+namespace collections
+{
+namespace threads
+{
+
+/**
+ * @brief GPUThreadSim A class that simulates the behavior of a GPU (inspired by CUDA)
+ */
+class GPUSim
+{
+public:
+    /**
+     * @brief ThreadIndex A structure that represents the index of a thread in a 3D space
+     */
+    struct ThreadIndex {
+        unsigned int x, y, z;
+        constexpr ThreadIndex(unsigned int x, unsigned int y, unsigned int z=1)
+            : x(x), y(y), z(z)
+        {};
+
+        constexpr ThreadIndex(const ThreadIndex& index) = default;
+        constexpr ThreadIndex& operator=(const ThreadIndex& index) = default;
+
+        constexpr ThreadIndex(void)
+            : x(0), y(0), z(0)
+        {};
+
+        constexpr bool operator==(const ThreadIndex& index) const
+        {
+            return x == index.x && y == index.y && z == index.z;
+        }
+
+        constexpr bool operator!=(const ThreadIndex& index) const
+        {
+            return !(*this == index);
+        }
+
+        class iterator;
+        struct iterable;
+    };
+
+    class ThreadIndex::iterator {
+    private:
+        ThreadIndex _index;
+        ThreadIndex _size;
+
+    public:
+        constexpr iterator(const ThreadIndex& index, const ThreadIndex& size)
+            : _index(index), _size(ThreadIndex(size.x - 1, size.y - 1, size.z - 1))
+        {
+            if (_index.x > _size.x || _index.y > _size.y || _index.z > _size.z)
+            {
+                _index = _size;
+            }
+        }
+
+        constexpr iterator& operator++(void)
+        {
+            if (_index.x < _size.x)
+            {
+                _index.x++;
+            }
+            else if (_index.y < _size.y)
+            {
+                _index.x = 0;
+                _index.y++;
+            }
+            else if (_index.z < _size.z)
+            {
+                _index.x = 0;
+                _index.y = 0;
+                _index.z++;
+            }
+            return *this;
+        }
+
+        constexpr bool operator!=(const iterator& it) const
+        {
+            return _index != it._index;
+        }
+
+        constexpr const ThreadIndex& operator*(void) const
+        {
+            return _index;
+        }
+    };
+
+    struct ThreadIndex::iterable {
+        const ThreadIndex _index;
+        const ThreadIndex _size;
+
+        iterable(const ThreadIndex& size)
+            : _index(ThreadIndex()), _size(size)
+        {}
+
+        iterable(const ThreadIndex& index, const ThreadIndex& size)
+            : _index(index), _size(size)
+        {}
+
+        ThreadIndex::iterator begin(void) const
+        {
+            return ThreadIndex::iterator(_index, _size);
+        }
+
+        ThreadIndex::iterator end(void) const
+        {
+            return ThreadIndex::iterator(_size, _size);
+        }
+    };
+
+    /**
+     * @brief GPUCallback A callback function that is called by a thread
+     * @tparam Args The arguments types of the callback function
+     */
+    template<typename... Args>
+    using GPUCallback = std::function<void(const ThreadIndex&, Args...)>;
+
+    /**
+     * @brief GPUIndexFormat A function that formats the index of a thread to a specific format
+     */
+    using GPUIndexFormat = std::function<ThreadIndex(const ThreadIndex&)>;
+
+    // Methods to format the index of a thread
+    static inline constexpr ThreadIndex XYZ(const ThreadIndex& index) { return index; };
+    static inline constexpr ThreadIndex XZY(const ThreadIndex& index) { return ThreadIndex(index.x, index.z, index.y); };
+    static inline constexpr ThreadIndex YXZ(const ThreadIndex& index) { return ThreadIndex(index.y, index.x, index.z); };
+    static inline constexpr ThreadIndex YZX(const ThreadIndex& index) { return ThreadIndex(index.y, index.z, index.x); };
+    static inline constexpr ThreadIndex ZXY(const ThreadIndex& index) { return ThreadIndex(index.z, index.x, index.y); };
+    static inline constexpr ThreadIndex ZYX(const ThreadIndex& index) { return ThreadIndex(index.z, index.y, index.x); };
+
+private:
+    BasicService _thread_list;
+
+public:
+    /**
+     * @brief GPUThreadSim
+     * @param thread_count The number of threads that can be used concurrently
+     */
+    GPUSim(unsigned int thread_count=SILVA_THREAD_LIST_DEFAULT_SIZE)
+        : _thread_list(thread_count)
+    {}
+
+    /**
+     * @brief start_fmt Starts the simulation with a specific format
+     * @tparam Args The arguments types of the callback function
+     * @param size The size of the 3D space
+     * @param callback The callback function
+     * @param format The format of the index of a thread
+     * @param args The arguments of the callback function
+     * @return void
+     */
+    template<typename... Args>
+    void start_fmt(const ThreadIndex& size,
+        GPUCallback<Args...>&& callback,
+        GPUIndexFormat&& format,
+        Args&&... args)
+
+    {
+        for (const ThreadIndex& index : ThreadIndex::iterable(size))
+        {
+            _thread_list.start(
+                [](const ThreadIndex& index, GPUCallback<Args...>&& callback, Args&&... args)
+                {
+                    callback(index, std::forward<Args>(args)...);
+                }, format(index), std::forward<GPUCallback<Args...>>(callback), std::forward<Args>(args)...
+            );
+        }
+    }
+
+    /**
+     * @brief start Starts the simulation
+     * @tparam Args The arguments types of the callback function
+     * @param size The size of the 3D space
+     * @param callback The callback function
+     * @param args The arguments of the callback function
+     * @return void
+     */
+    template<typename... Args>
+    void start(const ThreadIndex& size,
+        GPUCallback<Args...>&& callback,
+        Args&&... args)
+    {
+        start_fmt(size, std::forward<GPUCallback<Args...>>(callback), XYZ, std::forward<Args>(args)...);
+    }
+
+    /**
+     * @brief Join all threads stop the simulation and wait until all tasks have finished
+     * @return void
+     */
+    ~GPUSim()
+    {
+        _thread_list.stop(false);
+        join();
+    }
+
+    /**
+     * @brief join Waits until all current tasks have finished
+     * @return void
+     */
+    void join(void)
+    {
+        _thread_list.join();
+    }
+
+    /**
+     * @brief stop Stops the simulation and remove all pending tasks
+     *             (Cannot stop the already started tasks but will stop the pending ones and remove them)
+     * @return void
+     */
+    void stop(void)
+    {
+        _thread_list.stop(true);
+    }
+};
+
+}
+}
+}
+}

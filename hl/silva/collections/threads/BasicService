@@ -1,0 +1,231 @@
+/**
+ * hl/silva/collections/threads/BasicService
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * 
+ * Made by: Mattis DALLEAU
+ */
+
+#pragma once
+
+#include <hl/silva/collections/threads/_base>
+
+namespace hl
+{
+namespace silva
+{
+namespace collections
+{
+namespace threads
+{
+
+/**
+ * @brief SilvaThreadList
+ */
+class BasicService
+{
+private:
+    std::vector<std::thread> _threads;
+    std::queue<std::size_t> _available_indexes;
+    std::queue<std::size_t> _to_release;
+
+
+    std::thread _thread_push;
+    std::thread _thread_release;
+    mutable std::mutex _mutex;
+
+    std::queue<std::function<void(void)>> _queue;
+
+    std::atomic_bool _running = true;
+    std::atomic_size_t _running_threads_count = 0;
+
+    /**
+     * @brief _has_finished Checks whether all given tasks have finished
+     * @tparam Lock Whether it is required to lock the mutex
+     * @return true all tasks have finished
+     * @return false some tasks are still running
+     */
+    template<bool Lock=false>
+    inline bool _has_finished() const
+    {
+        if constexpr (Lock == false) {
+            return _to_release.empty() == true &&
+                    _queue.empty() == true &&
+                    _running_threads_count == 0;
+        } else {
+            std::lock_guard<std::mutex> lock(this->_mutex);
+            return _has_finished<false>();
+        }
+    }
+
+public:
+
+    /**
+     * @brief BasicService
+     * @param size Number that can be used concurrently in this space
+     */
+    BasicService(const std::size_t& size=SILVA_THREAD_LIST_DEFAULT_SIZE)
+    {
+        this->_threads.reserve(size);
+
+        for (std::size_t i = 0; i < size; i++)
+        {
+            this->_threads.push_back(std::thread());
+            this->_available_indexes.push(i);
+        }
+
+        this->_thread_push = std::thread(
+            [this]
+            (void) -> void
+            {
+                while (this->_running == true)
+                {
+                    std::lock_guard<std::mutex> lock(this->_mutex);
+
+                    if (this->_running == false && this->_has_finished<false>() == true)
+                    {
+                        return;
+                    }
+
+                    if (this->_available_indexes.empty() == true)
+                        continue;
+
+                    if (this->_queue.empty() == false)
+                    {
+                        this->_running_threads_count++;
+                        this->_queue.front()();
+                        this->_queue.pop();
+                    }
+                }
+            }
+        );
+
+        this->_thread_release = std::thread(
+            [this]
+            (void) -> void
+            {
+                while (this->_running == true)
+                {
+                    std::lock_guard<std::mutex> lock(this->_mutex);
+
+                    if (this->_running == false && this->_has_finished<false>() == true)
+                    {
+                        return;
+                    }
+
+                    while (this->_to_release.empty() == false)
+                    {
+                        const std::size_t index = this->_to_release.front();
+                        this->_threads[index].join();
+                        this->_to_release.pop();
+                        this->_available_indexes.push(index);
+                        this->_running_threads_count--;
+                    }
+                }
+            }
+        );
+    }
+
+    /**
+     * @brief ~BasicService
+     * Stops all threads and joins them
+     */
+    ~BasicService()
+    {
+        join();
+        _running = false;
+        _thread_push.join();
+        _thread_release.join();
+    }
+
+    /**
+     * @brief start Push to the queue a new task that will be executed by a thread when one is available
+     * @tparam F The callback function type
+     * @tparam Args The arguments types of the callback function
+     * @param f The callback function
+     * @param args The arguments of the callback function
+     * @return void
+     */
+    template<typename F, typename... Args>
+    void start(F&& f, Args&&... args)
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+
+        if (_running == false) {
+            return;
+        }
+
+        // Index is popped after the callback
+        this->_queue.push(
+            [this, f, args...]
+            (void) -> void
+            {
+                const std::size_t index = this->_available_indexes.front();
+                this->_available_indexes.pop();
+
+                this->_threads[index] = std::thread(
+                    [this, index, f, args...]
+                    (void) -> void
+                    {
+                        f(args...);
+                        std::lock_guard<std::mutex> lock(this->_mutex);
+                        this->_to_release.push(index);
+                    }
+                );
+
+            }
+        );
+    }
+
+    /**
+     * @brief join Waits until all tasks have finished
+     * @return void
+     */
+    void join(void)
+    {
+        while (!_has_finished<true>())
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    }
+
+    /**
+     * @brief stop Stops all threads
+     * @param remove_pending_queue Whether to remove all pending tasks
+     * @return void
+     */
+    void stop(bool remove_pending_queue=false)
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        _running = false;
+
+        if (remove_pending_queue)
+        {
+            while (!_queue.empty())
+            {
+                _queue.pop();
+            }
+
+        }
+    }
+};
+
+}
+}
+}
+}

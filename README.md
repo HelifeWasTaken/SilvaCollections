@@ -5,6 +5,10 @@ All classes are in the `hl::silva` namespace.
 
 Some files are codependent but no external dependencies are required.
 
+## Requirements
+
+Requires at least a `c++17` compiler
+
 ## StdInt
 
 Provides `u8`, `u16`, `unsigned int`, `u64`, `i8`, `i16`, `i32`, `i64`, `f32`, `f64` types.
@@ -18,9 +22,9 @@ Checks for `u128`, `i128`, `u256`, `i256`, `f128`, `f256` support.
 
 int main()
 {
-    // hl::silva::collections::std_int::u8, hl::silva::collections::std_int::u16, etc...
+    // hl::silva::collections::stdint::u8, hl::silva::collections::stdint::u16, etc...
     // etc...
-    // The using namespace is enabled by default for hl::silva::collections::std_int
+    // The typedefs are enabled by default but you can disable them
     u8 a = 0;
     u16 b = 0;
 
@@ -30,7 +34,7 @@ int main()
 
 ## Bit
 
-Provide an `endian` enum with `c++17` support...
+Provide an `endian` enum with `c++17<=` support...
 Provides `hl::silva::collections::bit::swap_endian`
 Provides `hl::silva::collections::bit::to_*_endian` functions.
 Provides `hl::silva::collections::bit::to_*_endian_inplace` functions.
@@ -92,7 +96,7 @@ Provides a `Singleton` template class that ensures only one instance of a class 
 ### Static
 
 ```cpp
-#include <hl/silva/collections/Singleton>
+#include <hl/silva/collections/Singletons/Static>
 
 struct MySingleton : public hl::silva::collections::singletons::Static<MySingleton>
 {
@@ -113,7 +117,7 @@ int main()
 ### Dynamic
 
 ```cpp
-#include <hl/silva/collections/Singleton>
+#include <hl/silva/collections/Singletons/Dynamic>
 
 struct MySingleton : public hl::silva::collections::singletons::Dynamic<MySingleton>
 {

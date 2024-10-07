@@ -107,7 +107,7 @@ static inline constexpr T swap_endian(const T &value)
 #endif
     // Generic slow implementation for other sizes (not recommended)
     T result = 0;
-    for (size_t i = 0; i < sizeof(T); i++)
+    for (std::size_t i = 0; i < sizeof(T); i++)
     {
         result |= ((value >> (i * 8)) & 0xFF) << ((sizeof(T) - i - 1) * 8);
     }
