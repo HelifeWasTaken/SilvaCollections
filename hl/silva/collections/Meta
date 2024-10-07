@@ -24,6 +24,7 @@
 #pragma once
 
 #include <variant>
+#include <type_traits>
 
 namespace hl
 {
@@ -33,7 +34,105 @@ namespace collections
 {
 namespace meta
 {
+    /**
+     * @brief Makes a class non assignable by copy when inherited
+     */
+    class NonAssignableCopy {
+    public:
+        NonAssignableCopy& operator=(const NonAssignableCopy&) = delete;
+        NonAssignableCopy() = default;
+        virtual ~NonAssignableCopy() = default;
+    };
 
+    /**
+     * @brief Makes a class non assignable by move when inherited
+     */
+    class NonAssignableMove {
+    public:
+        NonAssignableMove& operator=(NonAssignableMove&&) = delete;
+        NonAssignableMove() = default;
+        virtual ~NonAssignableMove() = default;
+    };
+
+    /**
+     * @brief Makes a class non constructible by copy when inherited
+     */
+    class NonConstructibleCopy {
+    public:
+        NonConstructibleCopy(const NonConstructibleCopy&) = delete;
+        NonConstructibleCopy() = default;
+        virtual ~NonConstructibleCopy() = default;
+    };
+
+    /**
+     * @brief Makes a class non constructible by move when inherited
+     */
+    class NonConstructibleMove {
+    public:
+        NonConstructibleMove(NonConstructibleMove&&) = delete;
+        NonConstructibleMove() = default;
+        virtual ~NonConstructibleMove() = default;
+    };
+
+    /**
+     * @brief Makes a class non copyable when inherited
+     */
+    class NonCopyable : public NonAssignableCopy, public NonAssignableMove {
+    public:
+        NonCopyable() = default;
+        virtual ~NonCopyable() override = default;
+    };
+
+    /**
+     * @brief Makes a class non moveable when inherited
+     */
+    class NonMoveable : public NonConstructibleMove, public NonConstructibleCopy {
+    public:
+        NonMoveable() = default;
+        virtual ~NonMoveable() override = default;
+    };
+
+    /**
+     * @brief Makes a class non copyable and non moveable when inherited
+     */
+    class NonCopyMoveable : public NonCopyable, public NonMoveable {
+    public:
+        NonCopyMoveable() = default;
+        virtual ~NonCopyMoveable() override = default;
+    };
+
+    /**
+     * @brief Makes a class non constructible when inherited
+     */
+    class NonConstructible {
+    public:
+        NonConstructible() = delete;
+        virtual ~NonConstructible() = default;
+    };
+
+    /**
+     * @brief Makes a class non destructible when inherited
+     */
+    class NonDestructible {
+    public:
+        NonDestructible() = default;
+        virtual ~NonDestructible() = delete;
+    };
+
+
+    /**
+     * @brief Enable when arithmetic
+     */
+    template<typename T>
+    using enable_when_arithmetic = std::enable_if_t<std::is_arithmetic<T>::value, bool>;
+
+    /**
+     * @brief Get the index of a type in a variant
+     * @tparam VariantType The variant type
+     * @tparam T The type to find
+     * @tparam index The index of the variant
+     * @return The index of the type in the variant
+     */
     template<typename VariantType, typename T, unsigned long long int index = 0>
     constexpr unsigned long long int variant_index() {
         static_assert(std::variant_size_v<VariantType> > index, "Type not found in variant");
@@ -46,63 +145,6 @@ namespace meta
         }
     } 
 
-    class NonAssignableCopy {
-    public:
-        NonAssignableCopy& operator=(const NonAssignableCopy&) = delete;
-        NonAssignableCopy() = default;
-        virtual ~NonAssignableCopy() = default;
-    };
-
-    class NonAssignableMove {
-    public:
-        NonAssignableMove& operator=(NonAssignableMove&&) = delete;
-        NonAssignableMove() = default;
-        virtual ~NonAssignableMove() = default;
-    };
-
-    class NonConstructibleCopy {
-    public:
-        NonConstructibleCopy(const NonConstructibleCopy&) = delete;
-        NonConstructibleCopy() = default;
-        virtual ~NonConstructibleCopy() = default;
-    };
-
-    class NonConstructibleMove {
-    public:
-        NonConstructibleMove(NonConstructibleMove&&) = delete;
-        NonConstructibleMove() = default;
-        virtual ~NonConstructibleMove() = default;
-    };
-
-    class NonCopyable : public NonAssignableCopy, public NonAssignableMove {
-    public:
-        NonCopyable() = default;
-        virtual ~NonCopyable() override = default;
-    };
-
-    class NonMoveable : public NonConstructibleMove, public NonConstructibleCopy {
-    public:
-        NonMoveable() = default;
-        virtual ~NonMoveable() override = default;
-    };
-
-    class NonCopyMoveable : public NonCopyable, public NonMoveable {
-    public:
-        NonCopyMoveable() = default;
-        virtual ~NonCopyMoveable() override = default;
-    };
-
-    class NonConstructible {
-    public:
-        NonConstructible() = delete;
-        virtual ~NonConstructible() = default;
-    };
-
-    class NonDestructible {
-    public:
-        NonDestructible() = default;
-        virtual ~NonDestructible() = delete;
-    };
 }
 }
 }

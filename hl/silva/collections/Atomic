@@ -23,12 +23,6 @@
 
 #pragma once
 
-#include <mutex>
-#include <vector>
-#include <list>
-#include <deque>
-#include <memory>
-
 #include <hl/silva/collections/atomic/DeQueue>
 #include <hl/silva/collections/atomic/List>
 #include <hl/silva/collections/atomic/Queue>
