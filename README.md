@@ -14,7 +14,7 @@ Alias `byte` to `u8`.
 Checks for `u128`, `i128`, `u256`, `i256`, `f128`, `f256` support.
 
 ```cpp
-#include <hl/collections/StdInt>
+#include <hl/silva/collections/StdInt>
 
 int main()
 {
@@ -31,14 +31,14 @@ int main()
 ## Bit
 
 Provide an `endian` enum with `c++17` support...
-Provides `hl::silva::bit::swap_endian`
-Provides `hl::silva::bit::to_*_endian` functions.
-Provides `hl::silva::bit::to_*_endian_inplace` functions.
-Provides `hl::silva::bit::native_to_network` and `hl::silva::bit::network_to_native` functions.
+Provides `hl::silva::collections::bit::swap_endian`
+Provides `hl::silva::collections::bit::to_*_endian` functions.
+Provides `hl::silva::collections::bit::to_*_endian_inplace` functions.
+Provides `hl::silva::collections::bit::native_to_network` and `hl::silva::bit::collections::network_to_native` functions.
 Provides `hl::silva::bit::native_to_network_inplace` and `hl::silva::bit::network_to_native_inplace` functions.
 
 ```cpp
-#include <hl/collections/Bit>
+#include <hl/silva/collections/Bit>
 #include <cassert>
 
 int main()
@@ -71,7 +71,7 @@ Provides a `hexdump` formatter for `std::ostream`...
 Based on [this](https://github.com/zmb3/hexdump) implementation.
 
 ```cpp
-#include <hl/collections/fmt/Hexdump>
+#include <hl/silva/collections/fmt/Hexdump>
 #include <iostream>
 
 int main()
@@ -92,7 +92,7 @@ Provides a `Singleton` template class that ensures only one instance of a class 
 ### Static
 
 ```cpp
-#include <hl/collections/Singleton>
+#include <hl/silva/collections/Singleton>
 
 struct MySingleton : public hl::silva::collections::singletons::Static<MySingleton>
 {
@@ -113,7 +113,7 @@ int main()
 ### Dynamic
 
 ```cpp
-#include <hl/collections/Singleton>
+#include <hl/silva/collections/Singleton>
 
 struct MySingleton : public hl::silva::collections::singletons::Dynamic<MySingleton>
 {
@@ -141,7 +141,7 @@ Provides a `Serializer` and `Deserializer` template class that serializes and de
 ### Basic Example
 
 ```cpp
-#include <hl/collections/Serializer>
+#include <hl/silva/collections/Serialization>
 #include <iostream>
 #include <cassert>
 
@@ -182,7 +182,7 @@ int main()
 ### Using variant to hold any serializable type
 
 ```cpp
-#include <hl/collections/Serializer>
+#include <hl/silva/collections/Serialization>
 #include <iostream>
 #include <cassert>
 
@@ -218,7 +218,7 @@ int main()
 ### Magic numbers validation
 
 ```cpp
-#include <hl/collections/Serializer>
+#include <hl/silva/collections/Serialization>
 #include <iostream>
 #include <cassert>
 
@@ -248,7 +248,7 @@ Actually even when not specifying a magic number, the serializer will add a defa
 ### Deserializer iterator
 
 ```cpp
-#include <hl/collections/Serializer>
+#include <hl/silva/collections/Serialization>
 #include <iostream>
 #include <cassert>
 
@@ -281,7 +281,7 @@ int main()
 This may happen when the buffer you receive contains more data than expected for example when you are reading from a socket.
 
 ```cpp
-#include <hl/collections/Serializer>
+#include <hl/silva/collections/Serialization>
 #include <cassert>
 
 int main()
@@ -317,7 +317,7 @@ Provides a `ThreadList` class that manages a list of threads that runs asynchron
 ### Regular mode
 
 ```cpp
-#include <hl/collections/Threads>
+#include <hl/silva/collections/Threads>
 #include <iostream>
 #include <chrono>
 #include <string>
@@ -359,7 +359,7 @@ It does not utilize the GPU but simulates the behavior of a GPU by running tasks
 To test this please download the `stb_image.h` file from [here](https://github.com/nothings/stb)
 
 ```cpp
-#include <hl/collections/Threads>
+#include <hl/silva/collections/Threads>
 #include <string>
 
 #define STB_IMAGE_IMPLEMENTATION

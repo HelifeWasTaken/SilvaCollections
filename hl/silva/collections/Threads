@@ -1,5 +1,5 @@
 /**
- * hl/collections/Threads
+ * hl/silva/collections/Threads
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -25,13 +25,12 @@
 
 #include <vector>
 #include <thread>
-#include <optional>
 #include <functional>
 #include <mutex>
 #include <queue>
 #include <atomic>
-#include <condition_variable>
-#include <memory>
+// TODO add condition variable for better performance
+// #include <condition_variable>
 
 namespace hl
 {

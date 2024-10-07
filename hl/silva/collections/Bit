@@ -1,5 +1,5 @@
 /**
- * hl/collections/Bit
+ * hl/silva/collections/Bit
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -48,7 +48,7 @@ enum class endian
     native = __BYTE_ORDER__,
 #endif
 
-#ifdef SILVA_BIT_ENABLE_NETWORK_AS_LITTLE
+#ifdef SILVA_COLLECTIONS_BIT_ENABLE_NETWORK_AS_LITTLE
 #warning "Using little endianess on the network is not a standard procedure!"
     network = little
 #else

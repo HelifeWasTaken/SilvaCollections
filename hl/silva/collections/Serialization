@@ -1,5 +1,5 @@
 /**
- * hl/collections/Serialization
+ * hl/silva/collections/Serialization
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -22,17 +22,13 @@
  */
 #pragma once
 
-#include <hl/collections/StdInt>
-#include <hl/collections/Bit>
-#include <hl/collections/Meta>
+#include <hl/silva/collections/StdInt>
+#include <hl/silva/collections/Bit>
+#include <hl/silva/collections/Meta>
 
 #include <vector>
-#include <string>
-#include <variant>
 #include <stdexcept>
-#include <cstring>
 #include <array>
-#include <optional>
 #include <string>
 
 // TODO: Add proper documentation
@@ -170,8 +166,11 @@ namespace metadata
         HeaderSizeType net_size = bit::native_to_network(size);
         MagicNumber net_magic = bit::native_to_network(magic.v32);
 
-        std::memcpy(header.data(), net_magic.v8, MAGIC_NUMBER_SIZE);
-        std::memcpy(header.data() + MAGIC_NUMBER_SIZE, &net_size, SIZE_TYPE_SIZE);
+        const byte* magic_ptr = (byte*)&net_magic.v8[0];
+        const byte* size_ptr = (byte*)&net_size;
+
+        std::copy(magic_ptr, magic_ptr + MAGIC_NUMBER_SIZE, header.begin());
+        std::copy(size_ptr, size_ptr + SIZE_TYPE_SIZE, header.begin() + MAGIC_NUMBER_SIZE);
 
         return header;
     }
@@ -183,8 +182,7 @@ namespace metadata
             throw std::runtime_error("Buffer is too small to contain the header");
         }
 
-        std::memcpy(magic.v8, buffer.data(), MAGIC_NUMBER_SIZE);
-
+        std::copy(buffer.begin(), buffer.begin() + MAGIC_NUMBER_SIZE, magic.v8);
         size = *(HeaderSizeType*)&buffer[MAGIC_NUMBER_SIZE];
 
         bit::network_to_native_inplace(size);

@@ -1,5 +1,5 @@
 /**
- * hl/collections/Meta
+ * hl/silva/collections/Singleton
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,9 +20,10 @@
  * 
  * Made by: Mattis DALLEAU
  */
+
 #pragma once
 
-#include <variant>
+#include <hl/silva/collections/Meta>
 
 namespace hl
 {
@@ -30,34 +31,57 @@ namespace silva
 {
 namespace collections
 {
-namespace meta
+namespace singletons
 {
 
-    template<typename VariantType, typename T, unsigned long long int index = 0>
-    constexpr unsigned long long int variant_index() {
-        static_assert(std::variant_size_v<VariantType> > index, "Type not found in variant");
-        if constexpr (index == std::variant_size_v<VariantType>) {
-            return index;
-        } else if constexpr (std::is_same_v<std::variant_alternative_t<index, VariantType>, T>) {
-            return index;
-        } else {
-            return variant_index<VariantType, T, index + 1>();
+class _SingletonBase : public meta::NonCopyMoveable, public meta::NonConstructible
+{
+};
+
+template <typename T>
+class Static : public _SingletonBase
+{
+public:
+    [[nodiscard]] static T& get() {
+        static T instance = {};
+        return instance;
+    }
+};
+
+template <typename T>
+class Dynamic : public _SingletonBase
+{
+private:
+    [[nodiscard]] static T* manage_ptr(T* instance = nullptr, bool set = false) {
+        static T *s_instance = nullptr;
+
+        if (set) {
+            if (s_instance) {
+                delete s_instance;
+            }
+            s_instance = instance;
         }
-    } 
+        return s_instance;
+    }
 
-    class NonCopyable {
-    public:
-        NonCopyable() = default;
-        NonCopyable(const NonCopyable&) = delete;
-        NonCopyable& operator=(const NonCopyable&) = delete;
-    };
+public:
+    [[nodiscard]] static T& get() {
+        return *manage_ptr();
+    }
 
-    class NonMovable {
-    public:
-        NonMovable() = default;
-        NonMovable(NonMovable&&) = delete;
-        NonMovable& operator=(NonMovable&&) = delete;
-    };
+    static void destroy() {
+        manage_ptr(nullptr, true);
+    }
+
+    static void set(T* instance) {
+        manage_ptr(instance, true);
+    }
+
+    virtual ~DynamicSingleton() {
+        destroy();
+    }
+};
+
 }
 }
 }

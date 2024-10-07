@@ -1,5 +1,5 @@
 /**
- * hl/collections/Singleton
+ * hl/silva/collections/StdInt
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,8 +20,7 @@
  * 
  * Made by: Mattis DALLEAU
  */
-
-#pragma once
+#include <cstdint>
 
 namespace hl
 {
@@ -29,54 +28,46 @@ namespace silva
 {
 namespace collections
 {
-namespace singletons
+namespace std_int
 {
 
-template <typename T>
-class Static
-{
-public:
-    [[nodiscard]] static T& get() {
-        static T instance = {};
-        return instance;
-    }
-};
+using u8    = std::uint8_t;
+using u16   = std::uint16_t;
+using u32   = std::uint32_t;
+using u64   = std::uint64_t;
+using i8    = std::int8_t;
+using i16   = std::int16_t;
+using i32   = std::int32_t;
+using i64   = std::int64_t;
+using f32   = float;
+using f64   = double;
+using bool8 = bool;
 
-template <typename T>
-class Dynamic
-{
-private:
-    [[nodiscard]] static T* manage_ptr(T* instance = nullptr, bool set = false) {
-        static T *s_instance = nullptr;
+using byte  = u8;
 
-        if (set) {
-            if (s_instance) {
-                delete s_instance;
-            }
-            s_instance = instance;
-        }
-        return s_instance;
-    }
+#ifdef __SIZEOF_INT128__
+using u128 = __uint128_t;
+using i128 = __int128_t;
+#endif
 
-public:
-    [[nodiscard]] static T& get() {
-        return *manage_ptr();
-    }
+#ifdef __SIZEOF_INT256__
+using u256 = __uint256_t;
+using i256 = __int256_t;
+#endif
 
-    static void destroy() {
-        manage_ptr(nullptr, true);
-    }
+#ifdef __SIZEOF_FLOAT128__
+using f128 = __float128;
+#endif
 
-    static void set(T* instance) {
-        manage_ptr(instance, true);
-    }
-
-    virtual ~DynamicSingleton() {
-        destroy();
-    }
-};
+#ifdef __SIZEOF_FLOAT256__
+using f256 = __float256;
+#endif
 
 }
 }
 }
 }
+
+#ifndef HL_DISABLE_USING_STD_INT
+using namespace hl::silva::collections::std_int;
+#endif

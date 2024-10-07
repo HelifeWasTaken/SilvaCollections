@@ -1,0 +1,108 @@
+/**
+ * hl/silva/collections/Meta
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * 
+ * Made by: Mattis DALLEAU
+ */
+#pragma once
+
+#include <variant>
+
+namespace hl
+{
+namespace silva
+{
+namespace collections
+{
+namespace meta
+{
+
+    template<typename VariantType, typename T, unsigned long long int index = 0>
+    constexpr unsigned long long int variant_index() {
+        static_assert(std::variant_size_v<VariantType> > index, "Type not found in variant");
+        if constexpr (index == std::variant_size_v<VariantType>) {
+            return index;
+        } else if constexpr (std::is_same_v<std::variant_alternative_t<index, VariantType>, T>) {
+            return index;
+        } else {
+            return variant_index<VariantType, T, index + 1>();
+        }
+    } 
+
+    class NonAssignableCopy {
+    public:
+        NonAssignableCopy& operator=(const NonAssignableCopy&) = delete;
+        NonAssignableCopy() = default;
+        virtual ~NonAssignableCopy() = default;
+    };
+
+    class NonAssignableMove {
+    public:
+        NonAssignableMove& operator=(NonAssignableMove&&) = delete;
+        NonAssignableMove() = default;
+        virtual ~NonAssignableMove() = default;
+    };
+
+    class NonConstructibleCopy {
+    public:
+        NonConstructibleCopy(const NonConstructibleCopy&) = delete;
+        NonConstructibleCopy() = default;
+        virtual ~NonConstructibleCopy() = default;
+    };
+
+    class NonConstructibleMove {
+    public:
+        NonConstructibleMove(NonConstructibleMove&&) = delete;
+        NonConstructibleMove() = default;
+        virtual ~NonConstructibleMove() = default;
+    };
+
+    class NonCopyable : public NonAssignableCopy, public NonAssignableMove {
+    public:
+        NonCopyable() = default;
+        virtual ~NonCopyable() override = default;
+    };
+
+    class NonMoveable : public NonConstructibleMove, public NonConstructibleCopy {
+    public:
+        NonMoveable() = default;
+        virtual ~NonMoveable() override = default;
+    };
+
+    class NonCopyMoveable : public NonCopyable, public NonMoveable {
+    public:
+        NonCopyMoveable() = default;
+        virtual ~NonCopyMoveable() override = default;
+    };
+
+    class NonConstructible {
+    public:
+        NonConstructible() = delete;
+        ~NonConstructible() = default;
+    };
+
+    class NonDestructible {
+    public:
+        NonDestructible() = default;
+        ~NonDestructible() = delete;
+    };
+}
+}
+}
+}
