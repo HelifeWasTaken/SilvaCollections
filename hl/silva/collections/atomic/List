@@ -20,9 +20,11 @@
  * 
  * Made by: Mattis DALLEAU
  */
+
 #pragma once
 
 #include <hl/silva/collections/atomic/_base>
+#include <list>
 
 namespace hl
 {
@@ -38,6 +40,7 @@ class List : public meta::NonCopyMoveable
 {
 public:
     using base_type_t = std::list<T, Allocator>;
+    using size_type = typename base_type_t::size_type;
 
 private:
     base_type_t m_list;
@@ -54,7 +57,7 @@ public:
     List() = default;
     virtual ~List() override = default;
 
-    void assign(size_t count, const T& value)
+    void assign(size_type count, const T& value)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_list.assign(count, value);
@@ -64,26 +67,26 @@ public:
 
     AtomicResult<T> front()
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_list.front());
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_list.front());
     }
 
     const AtomicResult<T> front() const
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_list.front());
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_list.front());
     }
 
     AtomicResult<T> back()
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_list.back());
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_list.back());
     }
 
     const AtomicResult<T> back() const
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_list.back());
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_list.back());
     }
 
     iterator begin()
@@ -164,13 +167,13 @@ public:
         return m_list.empty();
     }
 
-    size_t size() const
+    size_type size() const
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         return m_list.size();
     }
 
-    size_t max_size() const
+    size_type max_size() const
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         return m_list.max_size();
@@ -268,13 +271,13 @@ public:
         m_list.pop_front();
     }
 
-    void resize(size_t count)
+    void resize(size_type count)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_list.resize(count);
     }
 
-    void resize(size_t count, const T& value)
+    void resize(size_type count, const T& value)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_list.resize(count, value);

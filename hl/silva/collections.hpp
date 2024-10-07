@@ -21,11 +21,13 @@
  * Made by: Mattis DALLEAU
  */
 
-#include "collections/Atomic"
-#include "collections/Bit"
-#include "collections/Fmt"
-#include "collections/Meta"
-#include "collections/Serialization"
-#include "collections/Singleton"
-#include "collections/StdInt"
-#include "collections/Threads"
+#pragma once
+
+#include <hl/silva/collections/Atomic>
+#include <hl/silva/collections/Bit>
+#include <hl/silva/collections/Fmt>
+#include <hl/silva/collections/Meta>
+#include <hl/silva/collections/Serialization>
+#include <hl/silva/collections/Singleton>
+#include <hl/silva/collections/StdInt>
+#include <hl/silva/collections/Threads>

@@ -20,9 +20,11 @@
  * 
  * Made by: Mattis DALLEAU
  */
+
 #pragma once
 
 #include <hl/silva/collections/atomic/_base>
+#include <vector>
 
 namespace hl
 {
@@ -64,62 +66,62 @@ public:
 
     AtomicResult<T> at(size_type pos)
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_vector.at(pos));
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_vector.at(pos));
     }
 
     const AtomicResult<T> at(size_type pos) const
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_vector.at(pos));
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_vector.at(pos));
     }
 
     AtomicResult<T> operator[](size_type pos)
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_vector[pos]);
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_vector[pos]);
     }
 
     const AtomicResult<T> operator[](size_type pos) const
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_vector[pos]);
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_vector[pos]);
     }
 
     AtomicResult<T> front()
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_vector.front());
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_vector.front());
     }
 
     const AtomicResult<T> front() const
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_vector.front());
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_vector.front());
     }
 
     AtomicResult<T> back()
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_vector.back());
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_vector.back());
     }
 
     const AtomicResult<T> back() const
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_vector.back());
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_vector.back());
     }
 
     AtomicResultPtr<T> data()
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_vector.data());
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_vector.data());
     }
 
     const AtomicResultPtr<T> data() const
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_vector.data());
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_vector.data());
     }
 
     iterator begin()

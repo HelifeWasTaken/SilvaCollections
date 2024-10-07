@@ -20,6 +20,7 @@
  * 
  * Made by: Mattis DALLEAU
  */
+
 #include <cstdint>
 
 namespace hl

@@ -20,9 +20,11 @@
  * 
  * Made by: Mattis DALLEAU
  */
+
 #pragma once
 
 #include <hl/silva/collections/atomic/_base>
+#include <deque>
 
 namespace hl
 {
@@ -38,6 +40,7 @@ class DeQueue : public meta::NonCopyMoveable
 {
 public:
     using base_type_t = std::deque<T, Allocator>;
+    using size_type = typename base_type_t::size_type;
 
 private:
     base_type_t m_queue;
@@ -55,7 +58,7 @@ public:
     DeQueue() = default;
     virtual ~DeQueue() override = default;
 
-    void assign(size_t count, const T& value)
+    void assign(size_type count, const T& value)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_queue.assign(count, value);
@@ -63,52 +66,52 @@ public:
 
     // Element Access
 
-    AtomicResult<T> at(size_t pos)
+    AtomicResult<T> at(size_type pos)
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_queue.at(pos));
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_queue.at(pos));
     }
 
-    const AtomicResult<T> at(size_t pos) const
+    const AtomicResult<T> at(size_type pos) const
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_queue.at(pos));
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_queue.at(pos));
     }
 
-    AtomicResult<T> operator[](size_t pos)
+    AtomicResult<T> operator[](size_type pos)
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_queue[pos]);
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_queue[pos]);
     }
 
-    const AtomicResult<T> operator[](size_t pos) const
+    const AtomicResult<T> operator[](size_type pos) const
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_queue[pos]);
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_queue[pos]);
     }
 
     AtomicResult<T> front()
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_queue.front());
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_queue.front());
     }
 
     const AtomicResult<T> front() const
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_queue.front());
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_queue.front());
     }
 
     AtomicResult<T> back()
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_queue.back());
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_queue.back());
     }
 
     const AtomicResult<T> back() const
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return std::make_pair(std::move(lock), m_queue.back());
+        AtomicResultLock lock(m_mutex);
+        return AtomicResult(std::move(lock), m_queue.back());
     }
 
     // Iterators
@@ -192,13 +195,13 @@ public:
         return m_queue.empty();
     }
 
-    size_t size() const
+    size_type size() const
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         return m_queue.size();
     }
 
-    size_t max_size() const
+    size_type max_size() const
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         return m_queue.max_size();
@@ -286,13 +289,13 @@ public:
         m_queue.pop_front();
     }
 
-    void resize(size_t count)
+    void resize(size_type count)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_queue.resize(count);
     }
 
-    void resize(size_t count, const T& value)
+    void resize(size_type count, const T& value)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_queue.resize(count, value);

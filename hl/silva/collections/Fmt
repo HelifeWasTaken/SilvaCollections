@@ -21,4 +21,6 @@
  * Made by: Mattis DALLEAU
  */
 
+#pragma once
+
 #include <hl/silva/collections/fmt/Hexdump>

@@ -40,11 +40,57 @@ namespace atomic
 template<class T>
 using DefaultAllocator = std::allocator<T>;
 
-template<class T>
-using AtomicResult = std::pair<std::unique_lock<std::mutex>, T&>;
+using AtomicResultLock = std::unique_lock<std::mutex>;
+
+template<typename T>
+struct AtomicResult : public meta::NonCopyable
+{
+    AtomicResultLock lock;
+    T& value;
+
+    AtomicResult(AtomicResultLock &&lock, T& value)
+        : lock(std::move(lock)), value(value)
+    {
+    }
+
+    ~AtomicResult() override final = default;
+
+    AtomicResult(AtomicResult&& other) = default;
+    AtomicResult& operator=(AtomicResult&& other) = default;
+
+    inline T* operator->()
+    {
+        return &value;
+    }
+
+    inline T& operator*()
+    {
+        return value;
+    }
+
+    inline const T* operator->() const
+    {
+        return &value;
+    }
+
+    inline const T& operator*() const
+    {
+        return value;
+    }
+
+    inline operator T&()
+    {
+        return value;
+    }
+
+    inline operator const T&() const
+    {
+        return value;
+    }
+};
 
 template<class T>
-using AtomicResultPtr = std::pair<std::unique_lock<std::mutex>, T*>;
+using AtomicResultPtr = AtomicResult<T*>;
 
 // Using an iterator is not considered atomic and may cause a deadlock or be quite
 // unsafe or slow if not used properly.

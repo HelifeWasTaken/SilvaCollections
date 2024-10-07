@@ -20,6 +20,7 @@
  * 
  * Made by: Mattis DALLEAU
  */
+
 #pragma once
 
 #include <hl/silva/collections/atomic/DeQueue>
@@ -57,48 +58,50 @@ private:
     using DeQueue<T, Allocator>::resize;
 
 public:
-    AtomicResult<T> front()
+    using size_type = typename DeQueue<T, Allocator>::size_type;
+
+    inline AtomicResult<T> front()
     {
         return DeQueue<T, Allocator>::front();
     }
 
-    AtomicResult<T> back()
+    inline AtomicResult<T> back()
     {
         return DeQueue<T, Allocator>::back();
     }
 
-    bool empty() const
+    inline bool empty() const
     {
         return DeQueue<T, Allocator>::empty();
     }
 
-    size_t size() const
+    inline size_type size() const
     {
         return DeQueue<T, Allocator>::size();
     }
 
-    void push(const T& value)
+    inline void push(const T& value)
     {
         DeQueue<T, Allocator>::push_back(value);
     }
 
-    void push(T&& value)
+    inline void push(T&& value)
     {
         DeQueue<T, Allocator>::push_back(std::move(value));
     }
 
     template<class... Args>
-    void emplace(Args&&... args)
+    inline void emplace(Args&&... args)
     {
         DeQueue<T, Allocator>::emplace_back(std::forward<Args>(args)...);
     }
 
-    void pop()
+    inline void pop()
     {
         DeQueue<T, Allocator>::pop_front();
     }
 
-    void swap(Queue& other)
+    inline void swap(Queue& other)
     {
         DeQueue<T, Allocator>::swap(other);
     }
