@@ -1,0 +1,202 @@
+/**
+ * hl/silva/collections/atomic/_base
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * 
+ * Made by: Mattis DALLEAU
+ */
+
+#pragma once
+
+#include <mutex>
+#include <utility>
+#include <memory>
+#include <hl/silva/collections/Meta>
+
+namespace hl
+{
+namespace silva
+{
+namespace collections
+{
+namespace atomic
+{
+
+template<class T>
+using DefaultAllocator = std::allocator<T>;
+
+template<class T>
+using AtomicResult = std::pair<std::unique_lock<std::mutex>, T&>;
+
+template<class T>
+using AtomicResultPtr = std::pair<std::unique_lock<std::mutex>, T*>;
+
+// Using an iterator is not considered atomic and may cause a deadlock or be quite
+// unsafe or slow if not used properly.
+// semi_atomic is a just made up term to signify that the iterator is atomic only
+// in some cases and not all.
+template<class T, typename IteratorType>
+class semi_atomic_unsafe_iterator_
+{
+public:
+    using base_iterator_t = IteratorType;
+
+private:
+    base_iterator_t m_iterator;
+    std::mutex& m_mutex;
+
+public:
+    semi_atomic_unsafe_iterator_(base_iterator_t iterator, std::mutex& mutex)
+        : m_iterator(iterator), m_mutex(mutex)
+    {
+    }
+
+    ~semi_atomic_unsafe_iterator_() = default;
+
+    AtomicResult<T> operator*()
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return *m_iterator;
+    }
+
+    // disallow direct access to the pointer so that the mutex is always locked
+    T* operator->() = delete; 
+
+    semi_atomic_unsafe_iterator_& operator++()
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        ++m_iterator;
+        return *this;
+    }
+
+    semi_atomic_unsafe_iterator_ operator++(int)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        semi_atomic_unsafe_iterator_ temp = *this;
+        ++m_iterator;
+        return temp;
+    }
+
+    semi_atomic_unsafe_iterator_& operator--()
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        --m_iterator;
+        return *this;
+    }
+
+    semi_atomic_unsafe_iterator_ operator--(int)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        semi_atomic_unsafe_iterator_ temp = *this;
+        --m_iterator;
+        return temp;
+    }
+
+    bool operator==(const semi_atomic_unsafe_iterator_& other) const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_iterator == other.m_iterator;
+    }
+
+    bool operator!=(const semi_atomic_unsafe_iterator_& other) const
+    {
+        return !(*this == other);
+    }
+
+    bool operator<(const semi_atomic_unsafe_iterator_& other) const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_iterator < other.m_iterator;
+    }
+
+    bool operator>(const semi_atomic_unsafe_iterator_& other) const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_iterator > other.m_iterator;
+    }
+
+    bool operator<=(const semi_atomic_unsafe_iterator_& other) const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_iterator <= other.m_iterator;
+    }
+
+    bool operator>=(const semi_atomic_unsafe_iterator_& other) const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_iterator >= other.m_iterator;
+    }
+
+    bool operator==(const base_iterator_t& other) const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_iterator == other;
+    }
+
+    bool operator!=(const base_iterator_t& other) const
+    {
+        return !(*this == other);
+    }
+
+    bool operator<(const base_iterator_t& other) const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_iterator < other;
+    }
+
+    bool operator>(const base_iterator_t& other) const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_iterator > other;
+    }
+
+    bool operator<=(const base_iterator_t& other) const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_iterator <= other;
+    }
+
+    bool operator>=(const base_iterator_t& other) const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_iterator >= other;
+    }
+
+    semi_atomic_unsafe_iterator_& operator=(const base_iterator_t& other)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_iterator = other;
+        return *this;
+    }
+
+    base_iterator_t non_atomic_iterator() const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_iterator;
+    }
+
+    base_iterator_t non_atomic_iterator_unsafe() const
+    {
+        return m_iterator;
+    }
+};
+
+}
+}
+}
+}
