@@ -94,13 +94,13 @@ namespace meta
     class NonConstructible {
     public:
         NonConstructible() = delete;
-        ~NonConstructible() = default;
+        virtual ~NonConstructible() = default;
     };
 
     class NonDestructible {
     public:
         NonDestructible() = default;
-        ~NonDestructible() = delete;
+        virtual ~NonDestructible() = delete;
     };
 }
 }

@@ -196,7 +196,6 @@ public:
     }
 };
 
-
 // en.cppreference.com/w/cpp/container/list
 template<class T, class Allocator = std::allocator<T>>
 class List : public meta::NonCopyMoveable
@@ -216,8 +215,8 @@ public:
     using const_reverse_iterator = semi_atomic_unsafe_iterator_<T, typename base_type_t::const_reverse_iterator>;
 
     // Member functions
-    List() {}
-    ~List() = default;
+    List() = default;
+    virtual ~List() override = default;
 
     void assign(size_t count, const T& value)
     {
@@ -485,8 +484,8 @@ public:
     using const_reverse_iterator = semi_atomic_unsafe_iterator_<T, typename base_type_t::const_reverse_iterator>;
 
     // Member functions
-    Vector() {}
-    ~Vector() = default;
+    Vector() = default;
+    virtual ~Vector() override = default;
 
     void assign(size_type count, const T& value)
     {
@@ -779,8 +778,8 @@ public:
     using const_reverse_iterator = semi_atomic_unsafe_iterator_<T, typename base_type_t::const_reverse_iterator>;
 
     // Member functions
-    DeQueue() {}
-    ~DeQueue() = default;
+    DeQueue() = default;
+    virtual ~DeQueue() override = default;
 
     void assign(size_t count, const T& value)
     {
@@ -1104,9 +1103,8 @@ public:
         DeQueue<T, Allocator>::swap(other);
     }
 
-
     Queue() = default;
-    ~Queue() = default;
+    virtual ~Queue() override = default;
 
     // Extend the base class with the following functions
     bool poll(T& value)
