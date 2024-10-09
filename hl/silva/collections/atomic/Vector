@@ -44,7 +44,7 @@ public:
 
 private:
     base_type_t m_vector;
-    mutable std::mutex m_mutex;
+    mutable Mutex m_mutex;
 
 public:
     using iterator = semi_atomic_unsafe_iterator_<T, typename base_type_t::iterator>;
@@ -58,7 +58,7 @@ public:
 
     void assign(size_type count, const T& value)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        LockGuard lock(m_mutex);
         m_vector.assign(count, value);
     }
 
@@ -67,218 +67,217 @@ public:
     AtomicResult<T> at(size_type pos)
     {
         AtomicResultLock lock(m_mutex);
-        return AtomicResult(std::move(lock), m_vector.at(pos));
+        return AtomicResult<T>(std::move(lock), m_vector.at(pos));
     }
 
-    const AtomicResult<T> at(size_type pos) const
+    AtomicResult<const T> at(size_type pos) const
     {
         AtomicResultLock lock(m_mutex);
-        return AtomicResult(std::move(lock), m_vector.at(pos));
+        return AtomicResult<const T>(std::move(lock), m_vector.at(pos));
     }
 
     AtomicResult<T> operator[](size_type pos)
     {
         AtomicResultLock lock(m_mutex);
-        return AtomicResult(std::move(lock), m_vector[pos]);
+        return AtomicResult<T>(std::move(lock), m_vector[pos]);
     }
 
-    const AtomicResult<T> operator[](size_type pos) const
+    AtomicResult<const T> operator[](size_type pos) const
     {
         AtomicResultLock lock(m_mutex);
-        return AtomicResult(std::move(lock), m_vector[pos]);
+        return AtomicResult<const T>(std::move(lock), m_vector[pos]);
     }
 
     AtomicResult<T> front()
     {
         AtomicResultLock lock(m_mutex);
-        return AtomicResult(std::move(lock), m_vector.front());
+        return AtomicResult<T>(std::move(lock), m_vector.front());
     }
 
-    const AtomicResult<T> front() const
+    AtomicResult<const T> front() const
     {
         AtomicResultLock lock(m_mutex);
-        return AtomicResult(std::move(lock), m_vector.front());
+        return AtomicResult<const T>(std::move(lock), m_vector.front());
     }
 
     AtomicResult<T> back()
     {
         AtomicResultLock lock(m_mutex);
-        return AtomicResult(std::move(lock), m_vector.back());
+        return AtomicResult<T>(std::move(lock), m_vector.back());
     }
 
-    const AtomicResult<T> back() const
+    AtomicResult<const T> back() const
     {
         AtomicResultLock lock(m_mutex);
-        return AtomicResult(std::move(lock), m_vector.back());
+        return AtomicResult<const T>(std::move(lock), m_vector.back());
     }
 
     AtomicResultPtr<T> data()
     {
         AtomicResultLock lock(m_mutex);
-        return AtomicResult(std::move(lock), m_vector.data());
+        return AtomicResult<T>(std::move(lock), m_vector.data());
     }
 
-    const AtomicResultPtr<T> data() const
+    AtomicResultPtr<const T> data() const
     {
         AtomicResultLock lock(m_mutex);
-        return AtomicResult(std::move(lock), m_vector.data());
+        return AtomicResult<const T>(std::move(lock), m_vector.data());
     }
 
     iterator begin()
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return iterator(m_vector.begin(), m_mutex);
+        AtomicResultIterLock lock(m_mutex);
+        return iterator(m_vector.begin(), std::move(lock));
     }
 
     const_iterator begin() const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return const_iterator(m_vector.begin(), m_mutex);
+        AtomicResultIterLock lock(m_mutex);
+        return const_iterator(m_vector.begin(), std::move(lock));
     }
 
     const_iterator cbegin() const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return const_iterator(m_vector.cbegin(), m_mutex);
+        AtomicResultIterLock lock(m_mutex);
+        return const_iterator(m_vector.cbegin(), std::move(lock));
     }
 
     iterator end()
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return iterator(m_vector.end(), m_mutex);
+        AtomicResultIterLock lock(m_mutex);
+        return iterator(m_vector.end(), std::move(lock));
     }
 
     const_iterator end() const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return const_iterator(m_vector.end(), m_mutex);
+        AtomicResultIterLock lock(m_mutex);
+        return const_iterator(m_vector.end(), std::move(lock));
     }
 
     const_iterator cend() const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return const_iterator(m_vector.cend(), m_mutex);
+        AtomicResultIterLock lock(m_mutex);
+        return const_iterator(m_vector.cend(), std::move(lock));
     }
 
     reverse_iterator rbegin()
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return reverse_iterator(m_vector.rbegin(), m_mutex);
+        AtomicResultIterLock lock(m_mutex);
+        return reverse_iterator(m_vector.rbegin(), std::move(lock));
     }
 
     const_reverse_iterator rbegin() const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return const_reverse_iterator(m_vector.rbegin(), m_mutex);
+        AtomicResultIterLock lock(m_mutex);
+        return const_reverse_iterator(m_vector.rbegin(), std::move(lock));
     }
 
     const_reverse_iterator crbegin() const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return const_reverse_iterator(m_vector.crbegin(), m_mutex);
+        AtomicResultIterLock lock(m_mutex);
+        return const_reverse_iterator(m_vector.crbegin(), std::move(lock));
     }
 
     reverse_iterator rend()
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return reverse_iterator(m_vector.rend(), m_mutex);
+        AtomicResultIterLock lock(m_mutex);
+        return reverse_iterator(m_vector.rend(), std::move(lock));
     }
 
     const_reverse_iterator rend() const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return const_reverse_iterator(m_vector.rend(), m_mutex);
+        AtomicResultIterLock lock(m_mutex);
+        return const_reverse_iterator(m_vector.rend(), std::move(lock));
     }
 
     const_reverse_iterator crend() const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return const_reverse_iterator(m_vector.crend(), m_mutex);
+        AtomicResultIterLock lock(m_mutex);
+        return const_reverse_iterator(m_vector.crend(), std::move(lock));
     }
 
     // Capacity
 
     bool empty() const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        LockGuard lock(m_mutex);
         return m_vector.empty();
     }
 
     size_type size() const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        LockGuard lock(m_mutex);
         return m_vector.size();
     }
 
     size_type max_size() const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        LockGuard lock(m_mutex);
         return m_vector.max_size();
     }
 
     void reserve(size_type new_cap)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        LockGuard lock(m_mutex);
         m_vector.reserve(new_cap);
     }
 
     size_type capacity() const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        LockGuard lock(m_mutex);
         return m_vector.capacity();
     }
 
-    // TODO
-    // void shrink_to_fit()
+    void shrink_to_fit()
+    {
+        LockGuard lock(m_mutex);
+        m_vector.shrink_to_fit();
+    }
 
     // Modifiers
 
     void clear()
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        LockGuard lock(m_mutex);
         m_vector.clear();
     }
 
     iterator insert(iterator pos, const T& value)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return iterator(m_vector.insert(pos.non_atomic_iterator_unsafe(), value), m_mutex);
+        return iterator(m_vector.insert(pos.non_atomic_iterator_unsafe(), value), pos.lock());
     }
 
     iterator insert(iterator pos, T&& value)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return iterator(m_vector.insert(pos.non_atomic_iterator_unsafe(), std::move(value)), m_mutex);
+        return iterator(m_vector.insert(pos.non_atomic_iterator_unsafe(), std::move(value)), pos.lock());
     }
 
     template<class... Args>
     iterator emplace(iterator pos, Args&&... args)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return iterator(m_vector.emplace(pos.non_atomic_iterator_unsafe(), std::forward<Args>(args)...), m_mutex);
+        return iterator(m_vector.emplace(pos.non_atomic_iterator_unsafe(), std::forward<Args>(args)...), pos.lock());
     }
 
     iterator erase(iterator pos)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return iterator(m_vector.erase(pos.non_atomic_iterator_unsafe()), m_mutex);
+        return iterator(m_vector.erase(pos.non_atomic_iterator_unsafe()), pos.lock());
     }
 
     iterator erase(iterator first, iterator last)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        return iterator(m_vector.erase(first.non_atomic_iterator_unsafe(), last.non_atomic_iterator_unsafe()), m_mutex);
+        // assert(first.lock() == last.lock());
+        return iterator(m_vector.erase(first.non_atomic_iterator_unsafe(), last.non_atomic_iterator_unsafe()), first.lock());
     }
 
     void push_back(const T& value)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        LockGuard lock(m_mutex);
         m_vector.push_back(value);
     }
 
     void push_back(T&& value)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        LockGuard lock(m_mutex);
         m_vector.push_back(std::move(value));
     }
 
@@ -290,36 +289,35 @@ public:
 
     void pop_back()
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        LockGuard lock(m_mutex);
         m_vector.pop_back();
     }
 
     void resize(size_type count)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        LockGuard lock(m_mutex);
         m_vector.resize(count);
     }
 
     void resize(size_type count, const T& value)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        LockGuard lock(m_mutex);
         m_vector.resize(count, value);
     }
 
     void swap(Vector& other)
     {
         std::lock(m_mutex, other.m_mutex);
-        std::lock_guard<std::mutex> lock1(m_mutex, std::adopt_lock);
-        std::lock_guard<std::mutex> lock2(other.m_mutex, std::adopt_lock);
         m_vector.swap(other.m_vector);
+        std::unlock(m_mutex, other.m_mutex);
     }
 
     bool operator==(const Vector& other) const
     {
         std::lock(m_mutex, other.m_mutex);
-        std::lock_guard<std::mutex> lock1(m_mutex, std::adopt_lock);
-        std::lock_guard<std::mutex> lock2(other.m_mutex, std::adopt_lock);
-        return m_vector == other.m_vector;
+        bool value = m_vector == other.m_vector;
+        std::unlock(m_mutex, other.m_mutex);
+        return value;
     }
 
     bool operator!=(const Vector& other) const

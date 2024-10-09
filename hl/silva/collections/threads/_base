@@ -23,15 +23,6 @@
 
 #pragma once
 
-#include <vector>
-#include <thread>
-#include <functional>
-#include <mutex>
-#include <queue>
-#include <atomic>
-// TODO add condition variable for better performance
-// #include <condition_variable>
-
 #ifndef SILVA_THREAD_LIST_DEFAULT_SIZE
 #define SILVA_THREAD_LIST_DEFAULT_SIZE 20
 #endif

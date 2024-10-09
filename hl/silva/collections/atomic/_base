@@ -23,8 +23,10 @@
 
 #pragma once
 
+#include <shared_mutex>
 #include <mutex>
 #include <memory>
+#include <functional>
 #include <hl/silva/collections/Meta>
 
 namespace hl
@@ -39,62 +41,54 @@ namespace atomic
 template<class T>
 using DefaultAllocator = std::allocator<T>;
 
-using AtomicResultLock = std::unique_lock<std::mutex>;
+// Requires shared mutex for multiple readers/iterators
+using Mutex = std::shared_mutex;
 
-template<typename T>
-struct AtomicResult : public meta::NonCopyable
+using AtomicResultLock = std::unique_lock<Mutex>;
+using AtomicResultIterLock = std::shared_lock<Mutex>; 
+
+using LockGuard = std::lock_guard<Mutex>;
+
+using AdoptLock = std::adopt_lock_t;
+
+template<class T>
+struct AtomicResult
 {
     AtomicResultLock lock;
-    T& value;
+    std::reference_wrapper<T> value;
 
     AtomicResult(AtomicResultLock &&lock, T& value)
         : lock(std::move(lock)), value(value)
     {
     }
 
-    ~AtomicResult() override final = default;
+    ~AtomicResult() = default;
 
+    AtomicResult(const AtomicResult& other) = default;
+    AtomicResult& operator=(const AtomicResult& other) = default;
     AtomicResult(AtomicResult&& other) = default;
     AtomicResult& operator=(AtomicResult&& other) = default;
 
-    inline T* operator->()
-    {
-        return &value;
-    }
-
     inline T& operator*()
     {
-        return value;
-    }
-
-    inline const T* operator->() const
-    {
-        return &value;
+        return value.get();
     }
 
     inline const T& operator*() const
     {
-        return value;
-    }
-
-    inline operator T&()
-    {
-        return value;
-    }
-
-    inline operator const T&() const
-    {
-        return value;
+        return value.get();
     }
 };
 
 template<class T>
 using AtomicResultPtr = AtomicResult<T*>;
 
-// Using an iterator is not considered atomic and may cause a deadlock or be quite
+// Using an iterator is not considered completely atomic and may cause a deadlock or be quite
 // unsafe or slow if not used properly.
 // semi_atomic is a just made up term to signify that the iterator is atomic only
 // in some cases and not all.
+// The iterator will automatically lock and adopt the lock of the mutex
+// Moving the iterator will result in copying the internal iterator and moving the lock
 template<class T, typename IteratorType>
 class semi_atomic_unsafe_iterator_
 {
@@ -103,19 +97,32 @@ public:
 
 private:
     base_iterator_t m_iterator;
-    std::mutex& m_mutex;
+    AtomicResultIterLock m_lock;
 
 public:
-    semi_atomic_unsafe_iterator_(base_iterator_t iterator, std::mutex& mutex)
-        : m_iterator(iterator), m_mutex(mutex)
-    {
-    }
+    semi_atomic_unsafe_iterator_(base_iterator_t iterator, AtomicResultIterLock&& lock)
+        : m_iterator(iterator), m_lock(std::move(lock))
+    {}
 
     ~semi_atomic_unsafe_iterator_() = default;
 
-    AtomicResult<T> operator*()
+    semi_atomic_unsafe_iterator_(const semi_atomic_unsafe_iterator_& other) = default;
+
+    semi_atomic_unsafe_iterator_(semi_atomic_unsafe_iterator_&& other)
+        : m_iterator(other.m_iterator), m_lock(std::move(other.m_lock))
+    {}
+
+    semi_atomic_unsafe_iterator_& operator=(const semi_atomic_unsafe_iterator_& other) = default;
+
+    semi_atomic_unsafe_iterator_& operator=(semi_atomic_unsafe_iterator_&& other)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        m_iterator = other.m_iterator;
+        m_lock = std::move(other.m_lock);
+        return *this;
+    }
+
+    T& operator*()
+    {
         return *m_iterator;
     }
 
@@ -124,14 +131,12 @@ public:
 
     semi_atomic_unsafe_iterator_& operator++()
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         ++m_iterator;
         return *this;
     }
 
     semi_atomic_unsafe_iterator_ operator++(int)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         semi_atomic_unsafe_iterator_ temp = *this;
         ++m_iterator;
         return temp;
@@ -139,14 +144,12 @@ public:
 
     semi_atomic_unsafe_iterator_& operator--()
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         --m_iterator;
         return *this;
     }
 
     semi_atomic_unsafe_iterator_ operator--(int)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         semi_atomic_unsafe_iterator_ temp = *this;
         --m_iterator;
         return temp;
@@ -154,7 +157,6 @@ public:
 
     bool operator==(const semi_atomic_unsafe_iterator_& other) const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         return m_iterator == other.m_iterator;
     }
 
@@ -165,31 +167,26 @@ public:
 
     bool operator<(const semi_atomic_unsafe_iterator_& other) const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         return m_iterator < other.m_iterator;
     }
 
     bool operator>(const semi_atomic_unsafe_iterator_& other) const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         return m_iterator > other.m_iterator;
     }
 
     bool operator<=(const semi_atomic_unsafe_iterator_& other) const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         return m_iterator <= other.m_iterator;
     }
 
     bool operator>=(const semi_atomic_unsafe_iterator_& other) const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         return m_iterator >= other.m_iterator;
     }
 
     bool operator==(const base_iterator_t& other) const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         return m_iterator == other;
     }
 
@@ -200,38 +197,32 @@ public:
 
     bool operator<(const base_iterator_t& other) const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         return m_iterator < other;
     }
 
     bool operator>(const base_iterator_t& other) const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         return m_iterator > other;
     }
 
     bool operator<=(const base_iterator_t& other) const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         return m_iterator <= other;
     }
 
     bool operator>=(const base_iterator_t& other) const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         return m_iterator >= other;
     }
 
     semi_atomic_unsafe_iterator_& operator=(const base_iterator_t& other)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         m_iterator = other;
         return *this;
     }
 
     base_iterator_t non_atomic_iterator() const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         return m_iterator;
     }
 
@@ -239,9 +230,23 @@ public:
     {
         return m_iterator;
     }
+
+    AtomicResultIterLock& lock()
+    {
+        return m_lock;
+    }
 };
 
 }
 }
 }
+}
+
+namespace std
+{
+    template<typename ...LockArgs>
+    void unlock(LockArgs&&... args)
+    {
+        (std::forward<LockArgs>(args).unlock(), ...);
+    }
 }

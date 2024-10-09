@@ -1,0 +1,113 @@
+/**
+ * hl/silva/collections/threads/BasicPoolAsync
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * 
+ * Made by: Mattis DALLEAU
+ */
+
+#pragma once
+
+#include <hl/silva/collections/threads/BasicPool>
+#include <atomic>
+
+namespace hl
+{
+namespace silva
+{
+namespace collections
+{
+namespace threads
+{
+
+class BasicPoolAsync
+{
+private:
+    std::atomic_bool m_stop;
+    std::atomic_bool m_has_event;
+    std::condition_variable m_condition;
+    std::mutex m_mutex;
+
+    std::thread m_async_thread_pool_update_thread;
+    BasicPool m_pool;
+
+public:
+    BasicPoolAsync()
+        : m_stop(false)
+        , m_has_event(false)
+        , m_condition()
+        , m_mutex()
+        , m_async_thread_pool_update_thread()
+        , m_pool(m_condition)
+    {
+        m_async_thread_pool_update_thread = std::thread([this]() {
+            do {
+                m_pool.update();
+                std::unique_lock<std::mutex> lock(m_mutex);
+                m_condition.wait(lock, [this] { return m_stop || m_has_event; });
+                m_has_event = false;
+            } while (!m_stop);
+        });
+    }
+
+    template <typename F, typename... Args>
+    void push(F &&f, Args &&...args)
+    {
+        if (m_stop)
+        {
+            return; // Ignore silently (Here just in case of Race condition)
+        }
+
+        m_pool.push(
+            [this](F &&fthread, Args &&...args_thread)
+            {
+                fthread(std::forward<Args>(args_thread)...);
+                m_has_event = true;
+                m_condition.notify_one();
+            }, std::forward<F>(f), std::forward<Args>(args)...);
+    }
+
+    void join()
+    {
+        m_pool.join();
+        m_condition.notify_one();
+    }
+
+    bool empty() const
+    {
+        return m_pool.empty();
+    }
+
+    ~BasicPoolAsync()
+    {
+        m_stop = true;
+        join();
+        m_async_thread_pool_update_thread.join();
+    }
+
+    template <bool IncludeDoneNotRemoved = false>
+    size_t pending_threads()
+    {
+        return m_pool.pending_threads<IncludeDoneNotRemoved>();
+    }
+};
+
+}
+}
+}
+}

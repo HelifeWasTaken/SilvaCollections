@@ -50,32 +50,42 @@ private:
     using DeQueue<T, Allocator>::rend;
     using DeQueue<T, Allocator>::crend;
     using DeQueue<T, Allocator>::max_size;
-    using DeQueue<T, Allocator>::clear;
     using DeQueue<T, Allocator>::insert;
     using DeQueue<T, Allocator>::erase;
     using DeQueue<T, Allocator>::pop_back;
     using DeQueue<T, Allocator>::push_front;
     using DeQueue<T, Allocator>::resize;
+    using DeQueue<T, Allocator>::poll_back;
 
 public:
     using size_type = typename DeQueue<T, Allocator>::size_type;
 
-    inline AtomicResult<T> front()
+    inline virtual AtomicResult<T> front() override final
     {
         return DeQueue<T, Allocator>::front();
     }
 
-    inline AtomicResult<T> back()
+    inline virtual AtomicResult<const T> front() const override final
+    {
+        return DeQueue<T, Allocator>::front();
+    }
+
+    inline virtual AtomicResult<T> back() override final
     {
         return DeQueue<T, Allocator>::back();
     }
 
-    inline bool empty() const
+    inline virtual AtomicResult<const T> back() const override final
+    {
+        return DeQueue<T, Allocator>::back();
+    }
+
+    inline virtual bool empty() const override
     {
         return DeQueue<T, Allocator>::empty();
     }
 
-    inline size_type size() const
+    inline virtual size_type size() const override
     {
         return DeQueue<T, Allocator>::size();
     }
@@ -109,17 +119,17 @@ public:
     Queue() = default;
     virtual ~Queue() override = default;
 
-    // Extend the base class with the following functions
-    bool poll(T& value)
+    template<bool shrink = false>
+    void clear()
     {
-        std::lock_guard<std::mutex> lock(this->m_mutex);
-        if (empty())
-        {
-            return false;
-        }
-        value = std::move(front());
-        pop();
-        return true;
+        DeQueue<T, Allocator>::clear();
+        if constexpr (shrink)
+            DeQueue<T, Allocator>::shrink_to_fit();
+    }
+
+    [[nodiscard]] bool poll(T& value)
+    {
+        return DeQueue<T, Allocator>::poll_front(value);
     }
 };
 

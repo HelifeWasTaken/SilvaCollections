@@ -23,7 +23,6 @@
 
 #pragma once
 
-
 // u8*4            u64         u8         rodata       u8        rodata
 // [magic number]  [size] [[typechartdata]data[0],    [typechart]data[1], ...]
 // String: [STRING_TYPE][size][data]

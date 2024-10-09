@@ -25,4 +25,4 @@
 
 #include <hl/silva/collections/stdint/default>
 #include <hl/silva/collections/stdint/ext>
-// #include <hl/silva/collections/stdint/typedef>
+#include <hl/silva/collections/stdint/typedef>
