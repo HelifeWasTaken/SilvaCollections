@@ -335,14 +335,10 @@ void log_atomic(const std::string& message)
 
 int main()
 {
-    // Can run SILVA_THREAD_LIST_DEFAULT_SIZE tasks at the same time.
-    hl::silva::collections::threads::BasicService service;
-    // You can specify
-    // hl::silva::ThreadList thread_list(10); // Will run 10 tasks at the same time.
-
+    hl::silva::collections::threads::BasicPool pool;
 
     for (int i = 0; i < 100; i++) {
-        service.start([i]() {
+        pool.start([i]() {
             log_atomic("Thread " + std::to_string(i) + " started.");
             int sleep_time = rand() % 10;
             log_atomic("Thread " + std::to_string(i) + " sleeping for " + std::to_string(sleep_time) + " seconds.");
@@ -362,12 +358,23 @@ It does not utilize the GPU but simulates the behavior of a GPU by running tasks
 
 To test this please download the `stb_image.h` file from [here](https://github.com/nothings/stb)
 
+This example loads 4 images and rotates them by 191.513413 degrees in parallel and saves the rotated images.
+The images must be the same size and divisible by 32 for simplicity of the example.
+
+It can for example assume that the images are 32x32, 64x64, 128x128, 256x256, etc...
+
 ```cpp
 #include <hl/silva/collections/Threads>
 #include <string>
+#include <fmt>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+
+static std::string get_image_name(unsigned int index, const char* prefix = "image", const char* extension = ".png")
+{
+    return fmt::format("{}{}{}", prefix, index, extension);
+}
 
 static unsigned char** load_square_images_of_same_size(
     unsigned int image_count, unsigned int &width,
@@ -376,9 +383,15 @@ static unsigned char** load_square_images_of_same_size(
 {
     const unsigned char** image = new unsigned char*[image_count]; // prepare to load n images.
 
+    if (image == nullptr)
+    {
+        std::cerr << "Failed to allocate memory for images." << std::endl;
+        exit(1);
+    }
+
     for (unsigned int i = 0; i < image_count; i++)
     {
-        const std::string file_name = "image" + std::to_string(i) + ".png";
+        const std::string file_name = get_image_name(i);
         image[i] = (unsigned char*)stbi_load(file_name.c_str(), &width, &height, &channels, 0);
 
         if (image[i] == nullptr)
@@ -417,36 +430,68 @@ image_load_error:
         {
             stbi_image_free(image[j]);
         }
-        std::cerr << "Failed to load image." << std::endl;
+        std::cerr << "Failed to load image: " << file_name << std::endl;
         delete[] image;
-        return nullptr;
+        exit(1);
     }
 
     return image;
 }
 
-int main()
+void prepare_images_out(size_t image_count)
 {
-    const unsigned int image_count = 4;
-    const unsigned int square_size = 32;
-    const unsigned int width, height, channels;
-    const float rotation = 191.513413; // degrees to rotate the image.
-
-    unsigned char **images = load_square_images_of_same_size(image_count, width, height, channels, square_size);
-    if (image == nullptr)
-    {
-        return 1;
-    }
-
-    using hl_threads = hl::silva::collections::threads;
-
-    hl_threads::GPUSim service;
-
     unsigned char **images_out = new unsigned char*[image_count];
+
+    if (images_out == nullptr)
+    {
+        goto free_images;
+    }
     for (unsigned int i = 0; i < image_count; i++)
     {
         images_out[i] = new u8[width * height * channels];
+        if (images_out[i] == nullptr)
+        {
+            goto free_images_out;
+        }
     }
+
+    return images_out;
+
+free_images_out:
+    for (unsigned int i = 0; i < image_count; i++)
+    {
+        delete[] images_out[i];
+    }
+    delete[] images_out;
+    return nullptr;
+}
+o
+
+static const unsigned int image_count = 4;
+static const unsigned int square_size = 32;
+static const float rotation = 191.513413; // degrees to rotate the image.
+
+int main()
+{
+    using GPUSim = hl::silva::collections::threads::GPUSim;
+
+    unsigned int width, height, channels;
+
+    unsigned char **images = load_square_images_of_same_size(image_count, width, height, channels, square_size);
+    unsigned char **images_out = prepare_images_out(image_count);
+
+    if (images_out == nullptr)
+    {
+        std::cerr << "Failed to allocate memory for images_out." << std::endl;
+        for (unsigned int i = 0; i < image_count; i++)
+        {
+            stbi_image_free(images[i]);
+        }
+        delete[] images;
+        return 1;
+    }
+
+    GPUSim gpu_sim;
 
     // Divide the image into 32 x 32 squares and run the rotation in parallel.
     // Ensure that the image is divisible by 32.
@@ -454,12 +499,9 @@ int main()
 
     const unsigned int square_count = (width / square_size) * (height / square_size);
 
-    thread_list.start(
-        [](hl_threads::GPUSim::ThreadIndex& thread_index,
-        const unsigned char **images,  unsigned char **images_out, 
-        const unsigned int width, const unsigned int height,
-        const unsigned int channels, const unsigned int square_size,
-        const float rotation)
+    gpu_sim.start(
+        [images, images_out, width, height, channels, square_size, rotation]
+        (const GPUSim::ThreadIndex& thread_index)
         {
             const unsigned int x = thread_index.x * square_size;
             const unsigned int y = thread_index.y * square_size;
@@ -499,21 +541,24 @@ int main()
                     }
                 }
             }
-        }, ThreadIndex(square_count, square_count, image_count),
-    images, images_out, width, height, channels, square_size, rotation);
+        }, ThreadIndex(square_count, square_count, image_count));
 
-    thread_list.join();
+    gpu_sim.join();
 
-    for (unsigned int i = 0; i < image_count; i++)
-    {
-        const std::string file_name = "image" + std::to_string(i) + "_out.png";
-        stbi_write_png(file_name.c_str(), width, height, channels, images_out[i], width * channels);
-        stbi_image_free(images[i]);
-        delete[] images_out[i];
+    gpu_sim.start([images, images_out, width, height, channels, rotation]
+        (const GPUSim::ThreadIndex& thread_index)
+        {
+            const std::string file_name = "image" + std::to_string(thread_index.z) + "_rotated.png";
+            stbi_write_png(file_name.c_str(), width, height, channels, images_out[thread_index.z], width * channels);
+            stbi_image_free(images_out[thread_index.z]);
+            delete[] images[thread_index.z];
+        }, ThreadIndex(1, 1, image_count));
     }
 
-    stbi_image_free(image);
-    delete[] image_out;
+    gpu_sim.join();
+
+    delete[] images;
+    delete[] images_out;
 
     return 0;
 }
