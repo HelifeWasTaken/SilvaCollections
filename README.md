@@ -320,10 +320,12 @@ Provides a `ThreadList` class that manages a list of threads that runs asynchron
 ### Basic pool async
 
 ```cpp
-#include <hl/silva/collections/Threads>
+#include <hl/silva/collections/threads/basic_pool_async.hpp>
 #include <iostream>
 #include <chrono>
 #include <string>
+
+// Could also use std::osyncstream for atomic logging if c++20 is available.
 
 void log_atomic(const std::string& message)
 {
@@ -334,7 +336,7 @@ void log_atomic(const std::string& message)
 
 int main()
 {
-    hl::silva::collections::threads::BasicPool pool;
+    hl::silva::collections::threads::basic_pool_async pool;
 
     for (int i = 0; i < 100; i++) {
         pool.start([i]() {
@@ -346,7 +348,7 @@ int main()
         });
     }
 
-    thread_list.join();
+    // thread_list.join(); // Is automatic at end of scope.
     return 0;
 }
 ```
@@ -363,7 +365,7 @@ The images must be the same size and divisible by 32 for simplicity of the examp
 It can for example assume that the images are 32x32, 64x64, 128x128, 256x256, etc...
 
 ```cpp
-#include <hl/silva/collections/Threads>
+#include <hl/silva/collections/threads/gpu_sim.hpp>
 #include <string>
 #include <fmt>
 
@@ -472,7 +474,7 @@ static const float rotation = 191.513413; // degrees to rotate the image.
 
 int main()
 {
-    using GPUSim = hl::silva::collections::threads::GPUSim;
+    using GPUSim = hl::silva::collections::threads::gpu_sim;
 
     unsigned int width, height, channels;
 
