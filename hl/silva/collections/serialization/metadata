@@ -165,7 +165,7 @@ namespace metadata
         }
 
         std::copy(buffer.begin(), buffer.begin() + MAGIC_NUMBER_SIZE, magic.v8);
-        size = *(HeaderSizeType*)&buffer[MAGIC_NUMBER_SIZE];
+        size = *(const HeaderSizeType*)&buffer[MAGIC_NUMBER_SIZE];
 
         bit::network_to_native_inplace(size);
         bit::network_to_native_inplace(magic.v32);

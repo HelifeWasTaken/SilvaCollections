@@ -81,7 +81,7 @@ public:
 
     void join()
     {
-        for (auto &it : m_threads)
+        for (auto &it : m_threads.iter())
         {
             it.join();
         }
@@ -97,7 +97,11 @@ public:
         while (m_ids.poll(id))
         {
             m_threads.remove_if([id](const std::thread &thread) {
-                return thread.get_id() == id;
+                if (thread.get_id() == id) {
+                    const_cast<std::thread *>(&thread)->join(); // bruh wtf that should be illegal but it's the fastest i could find
+                    return true;
+                }
+                return false;
             });
         }
     }

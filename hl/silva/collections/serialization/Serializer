@@ -49,7 +49,8 @@ public:
     Serializer& operator=(Serializer&& other) = default;
 
     Serializer(const serialization::metadata::MagicNumber& magic)
-        : m_magic(magic)
+        : m_buffer()
+        , m_magic(magic)
     {}
 
     ~Serializer() = default;

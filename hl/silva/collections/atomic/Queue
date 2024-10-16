@@ -41,14 +41,6 @@ private:
     using DeQueue<T, Allocator>::assign;
     using DeQueue<T, Allocator>::at;
     using DeQueue<T, Allocator>::operator[];
-    using DeQueue<T, Allocator>::begin;
-    using DeQueue<T, Allocator>::cbegin;
-    using DeQueue<T, Allocator>::end;
-    using DeQueue<T, Allocator>::cend;
-    using DeQueue<T, Allocator>::rbegin;
-    using DeQueue<T, Allocator>::crbegin;
-    using DeQueue<T, Allocator>::rend;
-    using DeQueue<T, Allocator>::crend;
     using DeQueue<T, Allocator>::max_size;
     using DeQueue<T, Allocator>::insert;
     using DeQueue<T, Allocator>::erase;
@@ -56,6 +48,7 @@ private:
     using DeQueue<T, Allocator>::push_front;
     using DeQueue<T, Allocator>::resize;
     using DeQueue<T, Allocator>::poll_back;
+    using DeQueue<T, Allocator>::iter;
 
 public:
     using size_type = typename DeQueue<T, Allocator>::size_type;

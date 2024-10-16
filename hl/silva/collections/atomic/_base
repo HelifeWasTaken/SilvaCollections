@@ -29,6 +29,16 @@
 #include <functional>
 #include <hl/silva/collections/Meta>
 
+// Extend std
+namespace std
+{
+    template<typename ...LockArgs>
+    void unlock(LockArgs&&... args)
+    {
+        (std::forward<LockArgs>(args).unlock(), ...);
+    }
+}
+
 namespace hl
 {
 namespace silva
@@ -42,14 +52,73 @@ template<class T>
 using DefaultAllocator = std::allocator<T>;
 
 // Requires shared mutex for multiple readers/iterators
-using Mutex = std::shared_mutex;
+using Mutex = std::mutex;
 
 using AtomicResultLock = std::unique_lock<Mutex>;
-using AtomicResultIterLock = std::shared_lock<Mutex>; 
 
 using LockGuard = std::lock_guard<Mutex>;
 
-using AdoptLock = std::adopt_lock_t;
+class AtomicResultIterLock
+{
+private:
+    AtomicResultLock *m_lock = nullptr;
+    std::atomic_size_t *m_ref_count = nullptr;
+
+protected:
+    void _delete_routine()
+    {
+        if (m_ref_count == nullptr) {
+            return;
+        }
+
+        if (--(*m_ref_count) == 0) {
+            delete m_lock;
+            delete m_ref_count;
+        }
+        m_ref_count = nullptr;
+        m_lock = nullptr;
+    }
+
+public:
+    explicit AtomicResultIterLock(Mutex& mutex)
+        : m_lock(new AtomicResultLock(mutex))
+        , m_ref_count(new std::atomic_size_t(1))
+    {
+    }
+
+    AtomicResultIterLock(AtomicResultIterLock& other, std::adopt_lock_t)
+        : m_lock(other.m_lock)
+        , m_ref_count(other.m_ref_count)
+    {
+        ++(*other.m_ref_count);
+    }
+
+
+    AtomicResultIterLock& operator=(AtomicResultIterLock& other) = delete;
+
+    AtomicResultIterLock(AtomicResultIterLock&& other)
+        : m_lock(other.m_lock)
+        , m_ref_count(other.m_ref_count)
+    {
+        ++(*m_ref_count);
+        other._delete_routine();
+    }
+
+    AtomicResultIterLock& operator=(AtomicResultIterLock&& other)
+    {
+        _delete_routine();
+        m_lock = other.m_lock;
+        m_ref_count = other.m_ref_count;
+        ++(*other.m_ref_count);
+        other._delete_routine();
+        return *this;
+    }
+
+    ~AtomicResultIterLock()
+    {
+        _delete_routine();
+    }
+};
 
 template<class T>
 struct AtomicResult
@@ -57,8 +126,8 @@ struct AtomicResult
     AtomicResultLock lock;
     std::reference_wrapper<T> value;
 
-    AtomicResult(AtomicResultLock &&lock, T& value)
-        : lock(std::move(lock)), value(value)
+    AtomicResult(AtomicResultLock &&plock, T& pvalue)
+        : lock(std::move(plock)), value(pvalue)
     {
     }
 
@@ -104,15 +173,21 @@ public:
         : m_iterator(iterator), m_lock(std::move(lock))
     {}
 
+    semi_atomic_unsafe_iterator_(base_iterator_t iterator, AtomicResultIterLock& lock)
+        : m_iterator(iterator), m_lock(AtomicResultIterLock(lock, std::adopt_lock))
+    {}
+
     ~semi_atomic_unsafe_iterator_() = default;
 
-    semi_atomic_unsafe_iterator_(const semi_atomic_unsafe_iterator_& other) = default;
+    semi_atomic_unsafe_iterator_(const semi_atomic_unsafe_iterator_& other)
+        : m_iterator(other.m_iterator), m_lock(AtomicResultIterLock(lock, std::adopt_lock))
+    {}
 
     semi_atomic_unsafe_iterator_(semi_atomic_unsafe_iterator_&& other)
         : m_iterator(other.m_iterator), m_lock(std::move(other.m_lock))
     {}
 
-    semi_atomic_unsafe_iterator_& operator=(const semi_atomic_unsafe_iterator_& other) = default;
+    semi_atomic_unsafe_iterator_& operator=(const semi_atomic_unsafe_iterator_& other) = delete;
 
     semi_atomic_unsafe_iterator_& operator=(semi_atomic_unsafe_iterator_&& other)
     {
@@ -221,11 +296,6 @@ public:
         return *this;
     }
 
-    base_iterator_t non_atomic_iterator() const
-    {
-        return m_iterator;
-    }
-
     base_iterator_t non_atomic_iterator_unsafe() const
     {
         return m_iterator;
@@ -237,16 +307,103 @@ public:
     }
 };
 
+template<class T>
+class AtomicIterable
+{
+private:
+    mutable AtomicResultIterLock m_lock;
+    typename T::base_type_t& m_base_ref;
+
+public:
+    using iterator = typename T::iterator;
+    using const_iterator = typename T::const_iterator;
+    using reverse_iterator = typename T::reverse_iterator;
+    using const_reverse_iterator = typename T::const_reverse_iterator;
+
+    explicit AtomicIterable(Mutex& mutex, typename T::base_type_t& ref)
+        : m_lock(AtomicResultIterLock(mutex)), m_base_ref(ref)
+    {}
+
+    AtomicIterable(AtomicIterable& other)
+        : m_lock(other.m_lock), m_base_ref(other.m_base_ref)
+    {}
+
+    AtomicIterable& operator=(AtomicIterable& other) = delete;
+
+    AtomicIterable(AtomicIterable&& other)
+        : m_lock(std::move(other.m_lock)), m_base_ref(other.m_base_ref)
+    {}
+
+    AtomicIterable& operator=(AtomicIterable&& other)
+    {
+        m_lock = std::move(other);
+        m_base_ref = other.m_base_ref;
+        return *this;
+    }
+
+    iterator begin()
+    {
+        return iterator(m_base_ref.begin(), AtomicResultIterLock(m_lock, std::adopt_lock));
+    }
+
+    iterator end()
+    {
+        return iterator(m_base_ref.end(), AtomicResultIterLock(m_lock, std::adopt_lock));
+    }
+
+    reverse_iterator rbegin()
+    {
+        return reverse_iterator(m_base_ref.rbegin(), AtomicResultIterLock(m_lock, std::adopt_lock));
+    }
+
+    reverse_iterator rend()
+    {
+        return reverse_iterator(m_base_ref.rend(), AtomicResultIterLock(m_lock, std::adopt_lock));
+    }
+
+    const_iterator cbegin() const
+    {
+        return const_iterator(m_base_ref.cbegin(), AtomicResultIterLock(m_lock, std::adopt_lock));
+    }
+
+    const_iterator cend() const
+    {
+        return const_iterator(m_base_ref.cend(), AtomicResultIterLock(m_lock, std::adopt_lock));
+    }
+
+    const_reverse_iterator crbegin() const
+    {
+        return const_reverse_iterator(m_base_ref.rbegin(), AtomicResultIterLock(m_lock, std::adopt_lock));
+    }
+
+    const_reverse_iterator crend() const
+    {
+        return const_reverse_iterator(m_base_ref.rend(), AtomicResultIterLock(m_lock, std::adopt_lock));
+    }
+
+    const_iterator begin() const
+    {
+        return cbegin();
+    }
+
+    const_iterator end() const
+    {
+        return cend();
+    }
+
+    const_reverse_iterator rbegin() const
+    {
+        return crbegin();
+    }
+
+    const_reverse_iterator rend() const
+    {
+        return crend();
+    }
+};
+
 }
 }
 }
 }
 
-namespace std
-{
-    template<typename ...LockArgs>
-    void unlock(LockArgs&&... args)
-    {
-        (std::forward<LockArgs>(args).unlock(), ...);
-    }
-}

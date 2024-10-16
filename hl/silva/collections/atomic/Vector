@@ -124,78 +124,6 @@ public:
         return AtomicResult<const T>(std::move(lock), m_vector.data());
     }
 
-    iterator begin()
-    {
-        AtomicResultIterLock lock(m_mutex);
-        return iterator(m_vector.begin(), std::move(lock));
-    }
-
-    const_iterator begin() const
-    {
-        AtomicResultIterLock lock(m_mutex);
-        return const_iterator(m_vector.begin(), std::move(lock));
-    }
-
-    const_iterator cbegin() const
-    {
-        AtomicResultIterLock lock(m_mutex);
-        return const_iterator(m_vector.cbegin(), std::move(lock));
-    }
-
-    iterator end()
-    {
-        AtomicResultIterLock lock(m_mutex);
-        return iterator(m_vector.end(), std::move(lock));
-    }
-
-    const_iterator end() const
-    {
-        AtomicResultIterLock lock(m_mutex);
-        return const_iterator(m_vector.end(), std::move(lock));
-    }
-
-    const_iterator cend() const
-    {
-        AtomicResultIterLock lock(m_mutex);
-        return const_iterator(m_vector.cend(), std::move(lock));
-    }
-
-    reverse_iterator rbegin()
-    {
-        AtomicResultIterLock lock(m_mutex);
-        return reverse_iterator(m_vector.rbegin(), std::move(lock));
-    }
-
-    const_reverse_iterator rbegin() const
-    {
-        AtomicResultIterLock lock(m_mutex);
-        return const_reverse_iterator(m_vector.rbegin(), std::move(lock));
-    }
-
-    const_reverse_iterator crbegin() const
-    {
-        AtomicResultIterLock lock(m_mutex);
-        return const_reverse_iterator(m_vector.crbegin(), std::move(lock));
-    }
-
-    reverse_iterator rend()
-    {
-        AtomicResultIterLock lock(m_mutex);
-        return reverse_iterator(m_vector.rend(), std::move(lock));
-    }
-
-    const_reverse_iterator rend() const
-    {
-        AtomicResultIterLock lock(m_mutex);
-        return const_reverse_iterator(m_vector.rend(), std::move(lock));
-    }
-
-    const_reverse_iterator crend() const
-    {
-        AtomicResultIterLock lock(m_mutex);
-        return const_reverse_iterator(m_vector.crend(), std::move(lock));
-    }
-
     // Capacity
 
     bool empty() const
@@ -244,29 +172,34 @@ public:
 
     iterator insert(iterator pos, const T& value)
     {
-        return iterator(m_vector.insert(pos.non_atomic_iterator_unsafe(), value), pos.lock());
+        return iterator(m_vector.insert(pos.non_atomic_iterator_unsafe(), value), AtomicResultIterLock(pos.lock(), std::adopt_lock));
     }
 
     iterator insert(iterator pos, T&& value)
     {
-        return iterator(m_vector.insert(pos.non_atomic_iterator_unsafe(), std::move(value)), pos.lock());
+        return iterator(m_vector.insert(pos.non_atomic_iterator_unsafe(), std::move(value)), AtomicResultIterLock(pos.lock(), std::adopt_lock));
     }
 
     template<class... Args>
     iterator emplace(iterator pos, Args&&... args)
     {
-        return iterator(m_vector.emplace(pos.non_atomic_iterator_unsafe(), std::forward<Args>(args)...), pos.lock());
+        return iterator(m_vector.emplace(pos.non_atomic_iterator_unsafe(), std::forward<Args>(args)...), AtomicResultIterLock(pos.lock(), std::adopt_lock));
     }
 
     iterator erase(iterator pos)
     {
-        return iterator(m_vector.erase(pos.non_atomic_iterator_unsafe()), pos.lock());
+        return iterator(m_vector.erase(pos.non_atomic_iterator_unsafe()), AtomicResultIterLock(pos.lock(), std::adopt_lock));
     }
 
     iterator erase(iterator first, iterator last)
     {
         // assert(first.lock() == last.lock());
-        return iterator(m_vector.erase(first.non_atomic_iterator_unsafe(), last.non_atomic_iterator_unsafe()), first.lock());
+        return iterator(m_vector.erase(first.non_atomic_iterator_unsafe(), last.non_atomic_iterator_unsafe()), AtomicResultIterLock(first.lock(), std::adopt_lock));
+    }
+
+    AtomicIterable<Vector> iter()
+    {
+        return AtomicIterable<Vector>(m_mutex, m_vector);
     }
 
     void push_back(const T& value)
@@ -284,7 +217,7 @@ public:
     template<class... Args>
     void emplace_back(Args&&... args)
     {
-        emplace(end(), std::forward<Args>(args)...);
+        emplace(iter().end(), std::forward<Args>(args)...);
     }
 
     void pop_back()

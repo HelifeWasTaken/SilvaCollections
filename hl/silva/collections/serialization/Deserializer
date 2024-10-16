@@ -264,6 +264,7 @@ public:
     public:
         iterable(Deserializer &deserializer, const stdint::size_t& index = 0)
             : _deserializer(deserializer)
+            , _last_value(nullptr)
             , _index(index)
             , _original_index(deserializer.get_index())
         {

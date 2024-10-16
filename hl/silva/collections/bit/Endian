@@ -105,13 +105,19 @@ static inline constexpr T swap_endian(const T &value)
         return _byteswap_uint64(value);
     }
 #endif
-    // Generic slow implementation for other sizes (not recommended)
-    T result = 0;
-    for (std::size_t i = 0; i < sizeof(T); i++)
+    else
     {
-        result |= ((value >> (i * 8)) & 0xFF) << ((sizeof(T) - i - 1) * 8);
+        /*
+        // Generic slow implementation for other sizes (not recommended)
+        T result = 0;
+        for (std::size_t i = 0; i < sizeof(T); i++)
+        {
+            result |= ((value >> (i * 8)) & 0xFF) << ((sizeof(T) - i - 1) * 8);
+        }
+        return result;
+        */
+        static_assert("Unsupported byteswap size, given: " + std::to_string(sizeof(T)) + " bytes but supports only 1, 2, 4, 8 and (16, GNUC/Clang Only) bytes");
     }
-    return result;
 }
 
 /**
