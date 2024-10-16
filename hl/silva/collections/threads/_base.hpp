@@ -27,6 +27,10 @@
 #define SILVA_THREAD_LIST_DEFAULT_SIZE 20
 #endif
 
+#include <thread>
+#include <condition_variable>
+#include <atomic>
+
 namespace hl
 {
 namespace silva

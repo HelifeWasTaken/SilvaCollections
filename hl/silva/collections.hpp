@@ -27,7 +27,6 @@
 #include <hl/silva/collections/fmt.hpp>
 #include <hl/silva/collections/meta.hpp>
 #include <hl/silva/collections/serialization.hpp>
-#include <hl/silva/collections/singletons.hpp>
 #include <hl/silva/collections/stdint.hpp>
 #include <hl/silva/collections/thread_safe.hpp>
 #include <hl/silva/collections/threads.hpp>

@@ -58,6 +58,38 @@ enum class endian
 #endif
 };
 
+/**
+ * @brief Get the string representation of an endian
+ * @param e The endian to get the string representation
+ * @retval const char *The string representation of the endian
+ */
+static inline constexpr const char *endian_to_string(const endian &e)
+{
+    switch (e)
+    {
+    case endian::big:
+        if constexpr (endian::big == endian::network && endian::big == endian::native)
+            return "big (network, native)";
+        else if constexpr (endian::big == endian::network)
+            return "big (network)";
+        else if constexpr (endian::big == endian::native)
+            return "big (native)";
+        else
+            return "big";
+    case endian::little:
+        if constexpr (endian::little == endian::network && endian::little == endian::native)
+            return "little (network, native)";
+        else if constexpr (endian::little == endian::network)
+            return "little (network)";
+        else if constexpr (endian::little == endian::native)
+            return "little (native)";
+        else
+            return "little";
+    default:
+        return "unknown";
+    }
+}
+
 
 /**
  * @brief Swap endian
@@ -67,7 +99,7 @@ enum class endian
  * @param value The value to swap
  * @return The swapped value
  */
-template<typename T, meta::enable_when_arithmetic<T> = true>
+template<typename T, meta::is_arithmetic<T> = true>
 static inline constexpr T swap_endian(const T &value)
 {
     if constexpr (sizeof(T) == 1)
@@ -126,7 +158,7 @@ static inline constexpr T swap_endian(const T &value)
  * @param value The value to transform
  * @retval T The value in big endian
  */
-template<typename T, meta::enable_when_arithmetic<T> = true>
+template<typename T, meta::is_arithmetic<T> = true>
 static inline constexpr T to_big_endian(const T &value)
 {
     return endian::native == endian::big ? value : swap_endian(value);
@@ -137,7 +169,7 @@ static inline constexpr T to_big_endian(const T &value)
  * @param value The value to transform
  * @tparam T The type of the value
  */
-template<typename T, meta::enable_when_arithmetic<T> = true>
+template<typename T, meta::is_arithmetic<T> = true>
 static inline constexpr void to_big_endian_inplace(T &value)
 {
     value = to_big_endian(value);
@@ -148,7 +180,7 @@ static inline constexpr void to_big_endian_inplace(T &value)
  * @tparam T The type of the value
  * @retval T The value in little endian
  */
-template<typename T, meta::enable_when_arithmetic<T> = true>
+template<typename T, meta::is_arithmetic<T> = true>
 static inline constexpr T to_little_endian(const T &value)
 {
     return endian::native == endian::little ? value : swap_endian(value);
@@ -160,7 +192,7 @@ static inline constexpr T to_little_endian(const T &value)
  * @param value The value to transform
  * @retval T The value in little endian
  */
-template<typename T, meta::enable_when_arithmetic<T> = true>
+template<typename T, meta::is_arithmetic<T> = true>
 static inline constexpr void to_little_endian_inplace(T &value)
 {
     value = to_little_endian(value);
@@ -176,7 +208,7 @@ static inline constexpr void to_little_endian_inplace(T &value)
  *       Which means that network_to_native(value) == native_to_network(value)
  *       Thoses functions are the same but are named differently for readability
  */
-template<typename T, meta::enable_when_arithmetic<T> = true>
+template<typename T, meta::is_arithmetic<T> = true>
 static inline constexpr T native_to_network(const T &value)
 {
     if constexpr(endian::native != endian::network) {
@@ -195,7 +227,7 @@ static inline constexpr T native_to_network(const T &value)
  *       Which means that network_to_native(value) == native_to_network(value)
  *       Thoses functions are the same but are named differently for readability
  */
-template<typename T, meta::enable_when_arithmetic<T> = true>
+template<typename T, meta::is_arithmetic<T> = true>
 static inline constexpr T network_to_native(const T &value)
 {
     return native_to_network(value); // actually does the same (is the same as calling byteswap but only checks if the endianess is already big)
@@ -210,7 +242,7 @@ static inline constexpr T network_to_native(const T &value)
  *       Which means that network_to_native(value) == native_to_network(value)
  *       Thoses functions are the same but are named differently for readability
  */
-template<typename T, meta::enable_when_arithmetic<T> = true>
+template<typename T, meta::is_arithmetic<T> = true>
 static inline constexpr void native_to_network_inplace(T &value)
 {
     value = native_to_network(value);
@@ -225,7 +257,7 @@ static inline constexpr void native_to_network_inplace(T &value)
  *       Which means that network_to_native(value) == native_to_network(value)
  *       Thoses functions are the same but are named differently for readability
  */
-template<typename T, meta::enable_when_arithmetic<T> = true>
+template<typename T, meta::is_arithmetic<T> = true>
 static inline constexpr void network_to_native_inplace(T &value)
 {
     value = network_to_native(value);

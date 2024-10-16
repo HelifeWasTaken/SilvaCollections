@@ -72,8 +72,17 @@ struct hexdump_config
      * @param  out: The output stream
      * @retval The output stream
      */
-    std::ostream &print(std::ostream &out) const
+    std::ostream &print(std::ostream &out, bool print_empty=true) const
     {
+        if (m_length == 0)
+        {
+            if (print_empty)
+            {
+                out << "0x000000: " << "Empty" << std::endl;
+            }
+            return out;
+        }
+
         out.fill('0');
         for (size_t i = 0; i < m_length; i += RowSize)
         {
@@ -117,8 +126,6 @@ using hexdump_extended = hexdump_config<0x20>;
 
 namespace std
 {
-
-
     /**
      * @brief Operator << overload
      * @param  out: The output stream

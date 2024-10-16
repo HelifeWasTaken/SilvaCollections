@@ -85,55 +85,6 @@ int main()
 }
 ```
 
-## Singletons
-
-Provides a `Singleton` template class that ensures only one instance of a class is created.
-
-### Stack allocated
-
-```cpp
-#include <hl/silva/collections/singletons/stack.hpp>
-
-struct MySingleton : public hl::silva::collections::singletons::stack<MySingleton>
-{
-    MySingleton() = default;
-    ~MySingleton() = default;
-
-    int value = 0;
-};
-
-int main()
-{
-    MySingleton::get().value = 42;
-    return 0;
-    // MySingleton will be destroyed here.
-}
-```
-
-### Heap allocated
-
-```cpp
-#include <hl/silva/collections/singletons/heap.hpp>
-
-struct MySingleton : public hl::silva::collections::singletons::heap<MySingleton>
-{
-    MySingleton() = default;
-    virtual ~MySingleton() override = default;
-
-    int value = 0;
-};
-
-int main()
-{
-    MySingleton::set(new MySingleton());
-    MySingleton::get().value = 42;
-    MySingleton::set(new MySingleton()); // Deletes the previous instance.
-    std::cout << MySingleton::get().value << std::endl;
-    // MySingleton::destroy(); Automatically called when the program ends.
-    return 0;
-}
-```
-
 ## Serializer/Deserializer
 
 Provides a `serializer` and `deserializer` class that serializes and deserializes native objects.

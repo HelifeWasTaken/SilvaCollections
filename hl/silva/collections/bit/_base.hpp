@@ -24,4 +24,5 @@
 #pragma once
 
 #include <bit>
+#include <string>
 #include <hl/silva/collections/meta.hpp>

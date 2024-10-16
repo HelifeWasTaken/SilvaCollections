@@ -123,7 +123,7 @@ namespace meta
      * @brief Enable when arithmetic
      */
     template<typename T>
-    using enable_when_arithmetic = std::enable_if_t<std::is_arithmetic<T>::value, bool>;
+    using is_arithmetic = std::enable_if_t<std::is_arithmetic<T>::value, bool>;
 
     /**
      * @brief Get the index of a type in a variant
@@ -132,8 +132,8 @@ namespace meta
      * @tparam index The index of the variant
      * @return The index of the type in the variant
      */
-    template<typename VariantType, typename T, size_t index = 0>
-    constexpr size_t variant_index() {
+    template<typename VariantType, typename T, unsigned long int index = 0>
+    constexpr unsigned long int variant_index() {
         static_assert(std::variant_size_v<VariantType> > index, "Type not found in variant");
         if constexpr (index == std::variant_size_v<VariantType>) {
             return index;
