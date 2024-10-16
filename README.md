@@ -80,7 +80,7 @@ int main()
 {
     u8 data[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
 
-    std::cout << hl::silva::collections::fmt::Hexdump((void*)data, sizeof(data)) << std::endl;
+    std::cout << hl::silva::collections::fmt::hexdump((void*)data, sizeof(data)) << std::endl;
     return 0;
 }
 ```
@@ -148,8 +148,6 @@ Provides a `serializer` and `deserializer` class that serializes and deserialize
 
 int main()
 {
-    using hl::silva::collections::serialization = hl::silva::collections::serialization;
-
     u8 a = 42;
     f32 b = 3.14f;
     i8 c = 'c';
@@ -198,8 +196,6 @@ hl::silva::collections::serialization::serializer serialize_u8()
 
 int main()
 {
-    using hl::silva::collections::serialization = hl::silva::collections::serialization;
-
     auto serializer = serialize_u8();
     // used in case the buffer passed to the deserializer has more data than 
     // expected. The rest of the buffer will be stored here.
@@ -227,9 +223,7 @@ int main()
 
 int main()
 {
-    using hl::silva::collections::serialization = hl::silva::collections::serialization;
-
-    const hl::silva::collections::serialization::metadata::magic_number magic_number(hl::silva::unsigned int(0xdeadbeef));
+    const hl::silva::collections::serialization::metadata::magic_number magic_number(hl::silva::u32(0xdeadbeef));
 
     hl::silva::collections::serialization::serializer serializer(magic_number);
     u8 a = 42;
@@ -258,8 +252,6 @@ Actually even when not specifying a magic number, the serializer will add a defa
 
 int main()
 {
-    using hl::silva::collections::serialization = hl::silva::collections::serialization;
-
     u8 a = 42;
     f32 b = 3.14f;
     i8 c = 'c';
@@ -324,6 +316,7 @@ Provides a `ThreadList` class that manages a list of threads that runs asynchron
 #include <iostream>
 #include <chrono>
 #include <string>
+#include <fmt>
 
 // Could also use std::osyncstream for atomic logging if c++20 is available.
 
@@ -340,11 +333,11 @@ int main()
 
     for (int i = 0; i < 100; i++) {
         pool.start([i]() {
-            log_atomic("Thread " + std::to_string(i) + " started.");
+            log_atomic(std::fmt("Thread {} started", i));
             int sleep_time = rand() % 10;
-            log_atomic("Thread " + std::to_string(i) + " sleeping for " + std::to_string(sleep_time) + " seconds.");
+            log_atomic(std::fmt("Thread {} sleeping for {} seconds", i, sleep_time));
             std::this_thread::sleep_for(std::chrono::seconds(sleep_time));
-            log_atomic("Thread " + std::to_string(i) + " finished.");
+            log_atomic(std::fmt("Thread {} finished sleeping", i));
         });
     }
 
@@ -466,7 +459,6 @@ free_images_out:
     delete[] images_out;
     return nullptr;
 }
-o
 
 static const unsigned int image_count = 4;
 static const unsigned int square_size = 32;
@@ -546,15 +538,15 @@ int main()
 
     gpu_sim.join();
 
-    gpu_sim.start([images, images_out, width, height, channels, rotation]
+    gpu_sim.start(
+        [images, images_out, width, height, channels, rotation]
         (const GPUSim::ThreadIndex& thread_index)
         {
-            const std::string file_name = "image" + std::to_string(thread_index.z) + "_rotated.png";
+            const std::string file_name = std::fmt("image_{}_rotated.png", std::to_string(thread_index.z));
             stbi_write_png(file_name.c_str(), width, height, channels, images_out[thread_index.z], width * channels);
             stbi_image_free(images_out[thread_index.z]);
             delete[] images[thread_index.z];
         }, ThreadIndex(1, 1, image_count));
-    }
 
     gpu_sim.join();
 
