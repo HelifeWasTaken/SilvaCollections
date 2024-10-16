@@ -18,7 +18,7 @@ Alias `byte` to `u8`.
 Checks for `u128`, `i128`, `u256`, `i256`, `f128`, `f256` support.
 
 ```cpp
-#include <hl/silva/collections/StdInt>
+#include <hl/silva/collections/stdint.hpp>
 
 int main()
 {
@@ -42,20 +42,18 @@ Provides `hl::silva::collections::bit::native_to_network` and `hl::silva::bit::c
 Provides `hl::silva::bit::native_to_network_inplace` and `hl::silva::bit::network_to_native_inplace` functions.
 
 ```cpp
-#include <hl/silva/collections/Bit>
+#include <hl/silva/collections/bit/endian.hpp>
 #include <cassert>
 
 int main()
 {
-    using hl_bit = hl::silva::collections::bit;
-
     u16 native = 0x1234;
-    u16 rev = hl_bit::swap_endian(native);
-    u16 big = hl_bit::to_big_endian(native); 
+    u16 rev = hl::silva::collections::bit::swap_endian(native);
+    u16 big = hl::silva::collections::bit::to_big_endian(native); 
 
     assert(rev == 0x3412);
 
-    if (hl_bit::endian::native == hl_bit::endian::big)
+    if (hl::silva::collections::bit::endian::native == hl::silva::collections::bit::endian::big)
     {
         assert(native == big);
     }
@@ -75,16 +73,14 @@ Provides a `hexdump` formatter for `std::ostream`...
 Based on [this](https://github.com/zmb3/hexdump) implementation.
 
 ```cpp
-#include <hl/silva/collections/fmt/Hexdump>
+#include <hl/silva/collections/fmt/hexdump.hpp>
 #include <iostream>
 
 int main()
 {
-    using hl_fmt = hl::silva::collections::fmt;
-
     u8 data[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
 
-    std::cout << hl_fmt::Hexdump((void*)data, sizeof(data)) << std::endl;
+    std::cout << hl::silva::collections::fmt::Hexdump((void*)data, sizeof(data)) << std::endl;
     return 0;
 }
 ```
@@ -93,12 +89,12 @@ int main()
 
 Provides a `Singleton` template class that ensures only one instance of a class is created.
 
-### Static
+### Stack allocated
 
 ```cpp
-#include <hl/silva/collections/Singletons/Static>
+#include <hl/silva/collections/singletons/stack.hpp>
 
-struct MySingleton : public hl::silva::collections::singletons::Static<MySingleton>
+struct MySingleton : public hl::silva::collections::singletons::stack<MySingleton>
 {
     MySingleton() = default;
     ~MySingleton() = default;
@@ -114,12 +110,12 @@ int main()
 }
 ```
 
-### Dynamic
+### Heap allocated
 
 ```cpp
-#include <hl/silva/collections/Singletons/Dynamic>
+#include <hl/silva/collections/singletons/heap.hpp>
 
-struct MySingleton : public hl::silva::collections::singletons::Dynamic<MySingleton>
+struct MySingleton : public hl::silva::collections::singletons::heap<MySingleton>
 {
     MySingleton() = default;
     virtual ~MySingleton() override = default;
@@ -140,35 +136,36 @@ int main()
 
 ## Serializer/Deserializer
 
-Provides a `Serializer` and `Deserializer` template class that serializes and deserializes objects.
+Provides a `serializer` and `deserializer` class that serializes and deserializes native objects.
 
 ### Basic Example
 
 ```cpp
-#include <hl/silva/collections/Serialization>
+#include <hl/silva/collections/serialization/serializer.hpp>
+#include <hl/silva/collections/serialization/deserializer.hpp>
 #include <iostream>
 #include <cassert>
 
 int main()
 {
-    using hl_serialization = hl::silva::collections::serialization;
+    using hl::silva::collections::serialization = hl::silva::collections::serialization;
 
     u8 a = 42;
     f32 b = 3.14f;
     i8 c = 'c';
     std::string d = "Hello, World!";
 
-    hl_serialization::byte_vector e = {0x01, 0x02, 0x03, 0x04, 0x05};
+    hl::silva::collections::serialization::byte_vector e = {0x01, 0x02, 0x03, 0x04, 0x05};
 
     // used in case the buffer passed to the deserializer has more data than 
     // expected. The rest of the buffer will be stored here.
     // In this case the buffer will and should be empty.
-    hl_serialization::byte_vector rest_buffer; 
+    hl::silva::collections::serialization::byte_vector rest_buffer; 
 
-    hl_serialization::Serializer serializer;
+    hl::silva::collections::serialization::serializer serializer;
     serializer << a << b << c << d << e;
 
-    hl_serialization::Deserializer deserializer(serializer.serialized_buffer(), rest_buffer);
+    hl::silva::collections::serialization::deserializer deserializer(serializer.serialized_buffer(), rest_buffer);
     assert(rest_buffer.empty());
 
     deserializer >> a >> b >> c >> d >> e;
@@ -186,35 +183,36 @@ int main()
 ### Using variant to hold any serializable type
 
 ```cpp
-#include <hl/silva/collections/Serialization>
+#include <hl/silva/collections/serialization/serializer.hpp>
+#include <hl/silva/collections/serialization/deserializer.hpp>
 #include <iostream>
 #include <cassert>
 
-hl::silva::collections::serialization::Serializer serialize_u8()
+hl::silva::collections::serialization::serializer serialize_u8()
 {
     u8 a = 42;
-    hl::silva::serialization::Serializer serializer;
+    hl::silva::serialization::serializer serializer;
     serializer << a;
     return serializer;
 }
 
 int main()
 {
-    using hl_serialization = hl::silva::collections::serialization;
+    using hl::silva::collections::serialization = hl::silva::collections::serialization;
 
     auto serializer = serialize_u8();
     // used in case the buffer passed to the deserializer has more data than 
     // expected. The rest of the buffer will be stored here.
     // In this case the buffer will and should be empty.
-    hl_serialization::byte_vector rest_buffer;
+    hl::silva::collections::serialization::byte_vector rest_buffer;
 
-    hl_serialization::Deserializer deserializer(serializer.serialized_buffer(), rest_buffer);
+    hl::silva::collections::serialization::deserializer deserializer(serializer.serialized_buffer(), rest_buffer);
     assert(rest_buffer.empty());
 
-    hl_serialization::metadata::TypeValue value;
+    hl::silva::collections::serialization::metadata::TypeValue value;
     deserializer >> value;
 
-    assert(value.index() == hl_serialization::metadata::TypeChart::U8);
+    assert(value.index() == hl::silva::collections::serialization::metadata::TypeChart::U8);
     assert(value.value == 42);
 }
 ```
@@ -222,24 +220,25 @@ int main()
 ### Magic numbers validation
 
 ```cpp
-#include <hl/silva/collections/Serialization>
+#include <hl/silva/collections/serialization/serializer.hpp>
+#include <hl/silva/collections/serialization/deserializer.hpp>
 #include <iostream>
 #include <cassert>
 
 int main()
 {
-    using hl_serialization = hl::silva::collections::serialization;
+    using hl::silva::collections::serialization = hl::silva::collections::serialization;
 
-    const hl_serialization::metadata::MagicNumber magic_number(hl::silva::unsigned int(0xdeadbeef));
+    const hl::silva::collections::serialization::metadata::magic_number magic_number(hl::silva::unsigned int(0xdeadbeef));
 
-    hl_serialization::Serializer serializer(magic_number);
+    hl::silva::collections::serialization::serializer serializer(magic_number);
     u8 a = 42;
     serializer << a;
 
-    hl_serialization::byte_vector buffer = serializer.serialized_buffer();
+    hl::silva::collections::serialization::byte_vector buffer = serializer.serialized_buffer();
 
-    hl_serialization::byte_vector rest_buffer;
-    hl_serialization::Deserializer deserializer(buffer, rest_buffer, magic_number);
+    hl::silva::collections::serialization::byte_vector rest_buffer;
+    hl::silva::collections::serialization::deserializer deserializer(buffer, rest_buffer, magic_number);
     assert(rest_buffer.empty());
 
     // If the magic number is not the same as the one passed to the deserializer
@@ -252,25 +251,26 @@ Actually even when not specifying a magic number, the serializer will add a defa
 ### Deserializer iterator
 
 ```cpp
-#include <hl/silva/collections/Serialization>
+#include <hl/silva/collections/serialization/serializer.hpp>
+#include <hl/silva/collections/serialization/deserializer.hpp>
 #include <iostream>
 #include <cassert>
 
 int main()
 {
-    using hl_serialization = hl::silva::collections::serialization;
+    using hl::silva::collections::serialization = hl::silva::collections::serialization;
 
     u8 a = 42;
     f32 b = 3.14f;
     i8 c = 'c';
     std::string d = "Hello, World!";
-    hl_serialization::byte_vector e = {0x01, 0x02, 0x03, 0x04, 0x05};
+    hl::silva::collections::serialization::byte_vector e = {0x01, 0x02, 0x03, 0x04, 0x05};
 
-    hl_serialization::Serializer serializer;
+    hl::silva::collections::serialization::serializer serializer;
     serializer << a << b << c << d << e;
 
-    hl_serialization::byte_vector rest_buffer;
-    hl_serialization::Deserializer deserializer(serializer.serialized_buffer(), rest_buffer);
+    hl::silva::collections::serialization::byte_vector rest_buffer;
+    hl::silva::collections::serialization::deserializer deserializer(serializer.serialized_buffer(), rest_buffer);
 
     // for (const hl::silva::serializer_metadata::TypeValue& value : deserializer)
     for (const auto& value : deserializer)
@@ -285,25 +285,24 @@ int main()
 This may happen when the buffer you receive contains more data than expected for example when you are reading from a socket.
 
 ```cpp
-#include <hl/silva/collections/Serialization>
+#include <hl/silva/collections/serialization/serializer.hpp>
+#include <hl/silva/collections/serialization/deserializer.hpp>
 #include <cassert>
 
 int main()
 {
-    using hl_serialization = hl::silva::collections::serialization;
-
     const u8 a = 42;
     const hl::silva::byte_vector overfit = {0x01, 0x02, 0x03, 0x04, 0x05};
 
-    hl_serialization::Serializer serializer;
+    hl::silva::collections::serialization::serializer serializer;
     serializer << a;
 
-    hl_serialization::byte_vector serialized_buffer = serializer.serialized_buffer();
+    hl::silva::collections::serialization::byte_vector serialized_buffer = serializer.serialized_buffer();
     buffer.insert(buffer.end(), overfit.begin(), overfit.end()); // Simulate overfit
 
-    hl_serialization::byte_vector rest_buffer;
+    hl::silva::collections::serialization::byte_vector rest_buffer;
 
-    hl_serialization::Deserializer deserializer(serialized_buffer, rest_buffer);
+    hl::silva::collections::serialization::deserializer deserializer(serialized_buffer, rest_buffer);
 
     assert(rest_buffer == overfit);
 
@@ -314,11 +313,11 @@ int main()
 }
 ```
 
-## ThreadList
+## Threads
 
 Provides a `ThreadList` class that manages a list of threads that runs asynchronously.
 
-### Regular mode
+### Basic pool async
 
 ```cpp
 #include <hl/silva/collections/Threads>
