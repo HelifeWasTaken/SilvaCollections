@@ -61,63 +61,26 @@ using LockGuard = std::lock_guard<Mutex>;
 class AtomicResultIterLock
 {
 private:
-    AtomicResultLock *m_lock = nullptr;
-    std::atomic_size_t *m_ref_count = nullptr;
-
-protected:
-    void _delete_routine()
-    {
-        if (m_ref_count == nullptr) {
-            return;
-        }
-
-        if (--(*m_ref_count) == 0) {
-            delete m_lock;
-            delete m_ref_count;
-        }
-        m_ref_count = nullptr;
-        m_lock = nullptr;
-    }
+    std::shared_ptr<AtomicResultLock> m_lock;
 
 public:
     explicit AtomicResultIterLock(Mutex& mutex)
-        : m_lock(new AtomicResultLock(mutex))
-        , m_ref_count(new std::atomic_size_t(1))
+        : m_lock(std::make_shared<AtomicResultLock>(mutex))
     {
     }
 
-    AtomicResultIterLock(AtomicResultIterLock& other, std::adopt_lock_t)
+    explicit AtomicResultIterLock(AtomicResultIterLock& other, std::adopt_lock_t)
         : m_lock(other.m_lock)
-        , m_ref_count(other.m_ref_count)
-    {
-        ++(*other.m_ref_count);
-    }
+    {}
 
 
     AtomicResultIterLock& operator=(AtomicResultIterLock& other) = delete;
 
-    AtomicResultIterLock(AtomicResultIterLock&& other)
-        : m_lock(other.m_lock)
-        , m_ref_count(other.m_ref_count)
-    {
-        ++(*m_ref_count);
-        other._delete_routine();
-    }
+    AtomicResultIterLock(AtomicResultIterLock&& other) = default;
 
-    AtomicResultIterLock& operator=(AtomicResultIterLock&& other)
-    {
-        _delete_routine();
-        m_lock = other.m_lock;
-        m_ref_count = other.m_ref_count;
-        ++(*other.m_ref_count);
-        other._delete_routine();
-        return *this;
-    }
+    AtomicResultIterLock& operator=(AtomicResultIterLock&& other) = default;
 
-    ~AtomicResultIterLock()
-    {
-        _delete_routine();
-    }
+    ~AtomicResultIterLock() = default;
 };
 
 template<class T>
