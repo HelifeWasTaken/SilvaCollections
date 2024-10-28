@@ -33,4 +33,6 @@
 #if __cplusplus >= 201703L
 #include <hl/silva/collections/serialization/deserializer.hpp>
 #include <hl/silva/collections/serialization/serializer.hpp>
+#else
+#error "C++17 or higher is required for this library"
 #endif

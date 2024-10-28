@@ -38,7 +38,7 @@ namespace bit
  * @brief Endianess enum
  * @details Enum for the endianess
  */
-enum class endian
+enum class endian : int
 {
 #if __cplusplus >= 202002L
     big     = static_cast<int>(std::endian::big),
@@ -63,7 +63,7 @@ enum class endian
  * @param e The endian to get the string representation
  * @retval const char *The string representation of the endian
  */
-static inline HL_CONSTEVAL const char *endian_to_string(const endian &e)
+HL_CONSTEXPR_STATIC_INLINE_FUNCTION const char *endian_to_string(const endian &e)
 {
     switch (e)
     {
@@ -100,7 +100,7 @@ static inline HL_CONSTEVAL const char *endian_to_string(const endian &e)
  * @return The swapped value
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline HL_CONSTEVAL T swap_endian(const T &value)
+HL_CONSTEXPR_STATIC_INLINE_FUNCTION T swap_endian(const T &value)
 {
     if HL_CONSTEXPR (sizeof(T) == 1)
     {
@@ -159,7 +159,7 @@ static inline HL_CONSTEVAL T swap_endian(const T &value)
  * @retval T The value in big endian
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline HL_CONSTEVAL T to_big_endian(const T &value)
+HL_CONSTEXPR_STATIC_INLINE_FUNCTION T to_big_endian(const T &value)
 {
     return endian::native == endian::big ? value : swap_endian(value);
 }
@@ -170,7 +170,7 @@ static inline HL_CONSTEVAL T to_big_endian(const T &value)
  * @tparam T The type of the value
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline HL_CONSTEVAL void to_big_endian_inplace(T &value)
+HL_CONSTEXPR_STATIC_INLINE_FUNCTION void to_big_endian_inplace(T &value)
 {
     value = to_big_endian(value);
 }
@@ -181,7 +181,7 @@ static inline HL_CONSTEVAL void to_big_endian_inplace(T &value)
  * @retval T The value in little endian
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline HL_CONSTEVAL T to_little_endian(const T &value)
+HL_CONSTEXPR_STATIC_INLINE_FUNCTION T to_little_endian(const T &value)
 {
     return endian::native == endian::little ? value : swap_endian(value);
 }
@@ -193,7 +193,7 @@ static inline HL_CONSTEVAL T to_little_endian(const T &value)
  * @retval T The value in little endian
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline HL_CONSTEVAL void to_little_endian_inplace(T &value)
+HL_CONSTEXPR_STATIC_INLINE_FUNCTION void to_little_endian_inplace(T &value)
 {
     value = to_little_endian(value);
 }
@@ -209,7 +209,7 @@ static inline HL_CONSTEVAL void to_little_endian_inplace(T &value)
  *       Thoses functions are the same but are named differently for readability
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline HL_CONSTEVAL T native_to_network(const T &value)
+HL_CONSTEXPR_STATIC_INLINE_FUNCTION T native_to_network(const T &value)
 {
     HL_IF_CONSTEXPR(endian::native != endian::network) {
         return swap_endian(value);
@@ -228,7 +228,7 @@ static inline HL_CONSTEVAL T native_to_network(const T &value)
  *       Thoses functions are the same but are named differently for readability
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline HL_CONSTEVAL T network_to_native(const T &value)
+HL_CONSTEXPR_STATIC_INLINE_FUNCTION T network_to_native(const T &value)
 {
     return native_to_network(value); // actually does the same (is the same as calling byteswap but only checks if the endianess is already big)
 }
@@ -243,7 +243,7 @@ static inline HL_CONSTEVAL T network_to_native(const T &value)
  *       Thoses functions are the same but are named differently for readability
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline HL_CONSTEVAL void native_to_network_inplace(T &value)
+HL_CONSTEXPR_STATIC_INLINE_FUNCTION void native_to_network_inplace(T &value)
 {
     value = native_to_network(value);
 }
@@ -258,7 +258,7 @@ static inline HL_CONSTEVAL void native_to_network_inplace(T &value)
  *       Thoses functions are the same but are named differently for readability
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline HL_CONSTEVAL void network_to_native_inplace(T &value)
+HL_CONSTEXPR_STATIC_INLINE_FUNCTION void network_to_native_inplace(T &value)
 {
     value = network_to_native(value);
 }

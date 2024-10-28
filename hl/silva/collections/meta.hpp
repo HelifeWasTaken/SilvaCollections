@@ -70,6 +70,8 @@ namespace meta
     #define HL_CONSTEXPR_FUNCTION
 #endif
 
+#define HL_CONSTEXPR_STATIC_INLINE_FUNCTION static inline HL_CONSTEXPR_FUNCTION
+
     /**
      * @brief Makes a class non assignable by copy when inherited
      */
