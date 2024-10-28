@@ -23,7 +23,10 @@
 
 #pragma once
 
+#if __cplusplus >= 201703L
 #include <variant>
+#endif
+
 #include <type_traits>
 
 namespace hl
@@ -34,6 +37,39 @@ namespace collections
 {
 namespace meta
 {
+
+#if __cplusplus >= 201103L
+    #define HL_CONSTEXPR constexpr
+#else
+    #define HL_CONSTEXPR const
+#endif
+
+#if __cplusplus >= 201703L
+    #define HL_IF_CONSTEXPR if constexpr
+#else
+    #define HL_IF_CONSTEXPR if
+#endif
+
+#if __cplusplus >= 202002L
+    #define HL_CONSTEVAL consteval
+#elif __cplusplus >= 201103L
+    #define HL_CONSTEVAL constexpr
+#else
+    #define HL_CONSTEVAL
+#endif
+
+#if __cplusplus >= 201703L
+    #define HL_INLINE_CONSTEXPR_VARIABLE inline static HL_CONSTEXPR
+#else
+    #define HL_INLINE_CONSTEXPR_VARIABLE static const HL_CONSTEXPR
+#endif
+
+#if __cplusplus >= 201103L
+    #define HL_CONSTEXPR_FUNCTION constexpr
+#else
+    #define HL_CONSTEXPR_FUNCTION
+#endif
+
     /**
      * @brief Makes a class non assignable by copy when inherited
      */
@@ -123,8 +159,9 @@ namespace meta
      * @brief Enable when arithmetic
      */
     template<typename T>
-    using is_arithmetic = std::enable_if_t<std::is_arithmetic<T>::value, bool>;
+    using is_arithmetic = typename std::enable_if<std::is_arithmetic<T>::value, bool>::type;
 
+#if __cplusplus >= 201703L
     /**
      * @brief Get the index of a type in a variant
      * @tparam VariantType The variant type
@@ -133,16 +170,17 @@ namespace meta
      * @return The index of the type in the variant
      */
     template<typename VariantType, typename T, unsigned long int index = 0>
-    constexpr unsigned long int variant_index() {
+    HL_CONSTEVAL unsigned long int variant_index() {
         static_assert(std::variant_size_v<VariantType> > index, "Type not found in variant");
-        if constexpr (index == std::variant_size_v<VariantType>) {
+        HL_IF_CONSTEXPR (index == std::variant_size_v<VariantType>) {
             return index;
-        } else if constexpr (std::is_same_v<std::variant_alternative_t<index, VariantType>, T>) {
+        } else HL_IF_CONSTEXPR (std::is_same_v<std::variant_alternative_t<index, VariantType>, T>) {
             return index;
         } else {
             return variant_index<VariantType, T, index + 1>();
         }
     } 
+#endif
 
 }
 }

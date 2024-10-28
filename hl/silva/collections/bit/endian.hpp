@@ -63,25 +63,25 @@ enum class endian
  * @param e The endian to get the string representation
  * @retval const char *The string representation of the endian
  */
-static inline constexpr const char *endian_to_string(const endian &e)
+static inline HL_CONSTEVAL const char *endian_to_string(const endian &e)
 {
     switch (e)
     {
     case endian::big:
-        if constexpr (endian::big == endian::network && endian::big == endian::native)
+        HL_IF_CONSTEXPR (endian::big == endian::network && endian::big == endian::native)
             return "big (network, native)";
-        else if constexpr (endian::big == endian::network)
+        else HL_IF_CONSTEXPR (endian::big == endian::network)
             return "big (network)";
-        else if constexpr (endian::big == endian::native)
+        else HL_IF_CONSTEXPR (endian::big == endian::native)
             return "big (native)";
         else
             return "big";
     case endian::little:
-        if constexpr (endian::little == endian::network && endian::little == endian::native)
+        HL_IF_CONSTEXPR (endian::little == endian::network && endian::little == endian::native)
             return "little (network, native)";
-        else if constexpr (endian::little == endian::network)
+        else HL_IF_CONSTEXPR (endian::little == endian::network)
             return "little (network)";
-        else if constexpr (endian::little == endian::native)
+        else HL_IF_CONSTEXPR (endian::little == endian::native)
             return "little (native)";
         else
             return "little";
@@ -100,39 +100,39 @@ static inline constexpr const char *endian_to_string(const endian &e)
  * @return The swapped value
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline constexpr T swap_endian(const T &value)
+static inline HL_CONSTEVAL T swap_endian(const T &value)
 {
-    if constexpr (sizeof(T) == 1)
+    if HL_CONSTEXPR (sizeof(T) == 1)
     {
         return value;
     }
 #if defined(__GNUC__) || defined(__clang__)
-    else if constexpr (sizeof(T) == 2)
+    else HL_IF_CONSTEXPR (sizeof(T) == 2)
     {
         return __builtin_bswap16(value);
     }
-    else if constexpr (sizeof(T) == 4)
+    else HL_IF_CONSTEXPR (sizeof(T) == 4)
     {
         return __builtin_bswap32(value);
     }
-    else if constexpr (sizeof(T) == 8)
+    else HL_IF_CONSTEXPR (sizeof(T) == 8)
     {
         return __builtin_bswap64(value);
     }
-    else if constexpr (sizeof(T) == 16)
+    else HL_IF_CONSTEXPR (sizeof(T) == 16)
     {
         return __builtin_bswap128(value);
     }
 #elif defined(_MSC_VER)
-    else if constexpr (sizeof(T) == 2)
+    else HL_IF_CONSTEXPR (sizeof(T) == 2)
     {
         return _byteswap_ushort(value);
     }
-    else if constexpr (sizeof(T) == 4)
+    else HL_IF_CONSTEXPR (sizeof(T) == 4)
     {
         return _byteswap_ulong(value);
     }
-    else if constexpr (sizeof(T) == 8)
+    else HL_IF_CONSTEXPR (sizeof(T) == 8)
     {
         return _byteswap_uint64(value);
     }
@@ -159,7 +159,7 @@ static inline constexpr T swap_endian(const T &value)
  * @retval T The value in big endian
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline constexpr T to_big_endian(const T &value)
+static inline HL_CONSTEVAL T to_big_endian(const T &value)
 {
     return endian::native == endian::big ? value : swap_endian(value);
 }
@@ -170,7 +170,7 @@ static inline constexpr T to_big_endian(const T &value)
  * @tparam T The type of the value
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline constexpr void to_big_endian_inplace(T &value)
+static inline HL_CONSTEVAL void to_big_endian_inplace(T &value)
 {
     value = to_big_endian(value);
 }
@@ -181,7 +181,7 @@ static inline constexpr void to_big_endian_inplace(T &value)
  * @retval T The value in little endian
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline constexpr T to_little_endian(const T &value)
+static inline HL_CONSTEVAL T to_little_endian(const T &value)
 {
     return endian::native == endian::little ? value : swap_endian(value);
 }
@@ -193,7 +193,7 @@ static inline constexpr T to_little_endian(const T &value)
  * @retval T The value in little endian
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline constexpr void to_little_endian_inplace(T &value)
+static inline HL_CONSTEVAL void to_little_endian_inplace(T &value)
 {
     value = to_little_endian(value);
 }
@@ -209,9 +209,9 @@ static inline constexpr void to_little_endian_inplace(T &value)
  *       Thoses functions are the same but are named differently for readability
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline constexpr T native_to_network(const T &value)
+static inline HL_CONSTEVAL T native_to_network(const T &value)
 {
-    if constexpr(endian::native != endian::network) {
+    HL_IF_CONSTEXPR(endian::native != endian::network) {
         return swap_endian(value);
     }
     return value;
@@ -228,7 +228,7 @@ static inline constexpr T native_to_network(const T &value)
  *       Thoses functions are the same but are named differently for readability
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline constexpr T network_to_native(const T &value)
+static inline HL_CONSTEVAL T network_to_native(const T &value)
 {
     return native_to_network(value); // actually does the same (is the same as calling byteswap but only checks if the endianess is already big)
 }
@@ -243,7 +243,7 @@ static inline constexpr T network_to_native(const T &value)
  *       Thoses functions are the same but are named differently for readability
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline constexpr void native_to_network_inplace(T &value)
+static inline HL_CONSTEVAL void native_to_network_inplace(T &value)
 {
     value = native_to_network(value);
 }
@@ -258,7 +258,7 @@ static inline constexpr void native_to_network_inplace(T &value)
  *       Thoses functions are the same but are named differently for readability
  */
 template<typename T, meta::is_arithmetic<T> = true>
-static inline constexpr void network_to_native_inplace(T &value)
+static inline HL_CONSTEVAL void network_to_native_inplace(T &value)
 {
     value = network_to_native(value);
 }

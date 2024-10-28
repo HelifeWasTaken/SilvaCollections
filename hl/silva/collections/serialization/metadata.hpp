@@ -86,15 +86,15 @@ namespace metadata
         return std::visit([&value](auto&& arg) -> std::string {
             using T = std::decay_t<decltype(arg)>;
             // print using type chart to string
-            if constexpr (std::is_same_v<T, std::string>)
+            HL_IF_CONSTEXPR (std::is_same_v<T, std::string>)
             {
                 return "string<'" + arg + "'>";
             }
-            else if constexpr (std::is_same_v<T, byte_vector>)
+            else HL_IF_CONSTEXPR(std::is_same_v<T, byte_vector>)
             {
                 return "byte_vector<size=" + std::to_string(arg.size()) + ">";
             }
-            else if constexpr (std::is_same_v<T, nullptr_t>)
+            else HL_IF_CONSTEXPR(std::is_same_v<T, nullptr_t>)
             {
                 return "nullptr_t<end_marker>";
             }

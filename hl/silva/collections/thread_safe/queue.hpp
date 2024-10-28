@@ -116,7 +116,7 @@ public:
     void clear()
     {
         deque<T, Allocator>::clear();
-        if constexpr (shrink)
+        HL_IF_CONSTEXPR (shrink)
             deque<T, Allocator>::shrink_to_fit();
     }
 

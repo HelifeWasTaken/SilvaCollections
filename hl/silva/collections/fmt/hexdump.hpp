@@ -99,7 +99,7 @@ struct hexdump_config
                 }
             }
 
-            if constexpr (ShowAscii)
+            HL_IF_CONSTEXPR (ShowAscii)
             {
                 out << " ";
                 for (size_t j = 0; j < RowSize; ++j)

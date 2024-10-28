@@ -11,7 +11,7 @@ struct break_line_t
     }
 };
 
-static inline constexpr break_line_t break_line;
+static inline HL_CONSTEXPR break_line_t break_line;
 
 int main()
 {

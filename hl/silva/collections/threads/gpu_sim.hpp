@@ -45,23 +45,23 @@ public:
      */
     struct thread_index {
         unsigned int x, y, z;
-        constexpr thread_index(unsigned int px, unsigned int py, unsigned int pz=1)
+        HL_CONSTEXPR thread_index(unsigned int px, unsigned int py, unsigned int pz=1)
             : x(px), y(py), z(pz)
         {};
 
-        constexpr thread_index(const thread_index& index) = default;
-        constexpr thread_index& operator=(const thread_index& index) = default;
+        HL_CONSTEXPR thread_index(const thread_index& index) = default;
+        HL_CONSTEXPR thread_index& operator=(const thread_index& index) = default;
 
-        constexpr thread_index(void)
+        HL_CONSTEXPR thread_index(void)
             : x(0), y(0), z(0)
         {};
 
-        constexpr bool operator==(const thread_index& index) const
+        HL_CONSTEXPR bool operator==(const thread_index& index) const
         {
             return x == index.x && y == index.y && z == index.z;
         }
 
-        constexpr bool operator!=(const thread_index& index) const
+        HL_CONSTEXPR bool operator!=(const thread_index& index) const
         {
             return !(*this == index);
         }
@@ -76,7 +76,7 @@ public:
         thread_index _size;
 
     public:
-        constexpr iterator(const thread_index& index, const thread_index& size)
+        HL_CONSTEXPR iterator(const thread_index& index, const thread_index& size)
             : _index(index), _size(thread_index(size.x - 1, size.y - 1, size.z - 1))
         {
             if (_index.x > _size.x || _index.y > _size.y || _index.z > _size.z)
@@ -85,7 +85,7 @@ public:
             }
         }
 
-        constexpr iterator& operator++(void)
+        HL_CONSTEXPR iterator& operator++(void)
         {
             if (_index.x < _size.x)
             {
@@ -105,12 +105,12 @@ public:
             return *this;
         }
 
-        constexpr bool operator!=(const iterator& it) const
+        HL_CONSTEXPR bool operator!=(const iterator& it) const
         {
             return _index != it._index;
         }
 
-        constexpr const thread_index& operator*(void) const
+        HL_CONSTEXPR const thread_index& operator*(void) const
         {
             return _index;
         }
@@ -120,20 +120,20 @@ public:
         const thread_index _index;
         const thread_index _size;
 
-        iterable(const thread_index& size)
+        HL_CONSTEXPR iterable(const thread_index& size)
             : _index(thread_index()), _size(size)
         {}
 
-        iterable(const thread_index& index, const thread_index& size)
+        HL_CONSTEXPR iterable(const thread_index& index, const thread_index& size)
             : _index(index), _size(size)
         {}
 
-        thread_index::iterator begin(void) const
+        HL_CONSTEXPR thread_index::iterator begin(void) const
         {
             return thread_index::iterator(_index, _size);
         }
 
-        thread_index::iterator end(void) const
+        HL_CONSTEXPR thread_index::iterator end(void) const
         {
             return thread_index::iterator(_size, _size);
         }
@@ -152,12 +152,12 @@ public:
     using gpu_index_format = std::function<thread_index(const thread_index&)>;
 
     // Methods to format the index of a thread
-    static inline constexpr thread_index XYZ(const thread_index& index) { return index; };
-    static inline constexpr thread_index XZY(const thread_index& index) { return thread_index(index.x, index.z, index.y); };
-    static inline constexpr thread_index YXZ(const thread_index& index) { return thread_index(index.y, index.x, index.z); };
-    static inline constexpr thread_index YZX(const thread_index& index) { return thread_index(index.y, index.z, index.x); };
-    static inline constexpr thread_index ZXY(const thread_index& index) { return thread_index(index.z, index.x, index.y); };
-    static inline constexpr thread_index ZYX(const thread_index& index) { return thread_index(index.z, index.y, index.x); };
+    static inline HL_CONSTEXPR thread_index XYZ(const thread_index& index) { return index; };
+    static inline HL_CONSTEXPR thread_index XZY(const thread_index& index) { return thread_index(index.x, index.z, index.y); };
+    static inline HL_CONSTEXPR thread_index YXZ(const thread_index& index) { return thread_index(index.y, index.x, index.z); };
+    static inline HL_CONSTEXPR thread_index YZX(const thread_index& index) { return thread_index(index.y, index.z, index.x); };
+    static inline HL_CONSTEXPR thread_index ZXY(const thread_index& index) { return thread_index(index.z, index.x, index.y); };
+    static inline HL_CONSTEXPR thread_index ZYX(const thread_index& index) { return thread_index(index.z, index.y, index.x); };
 
 private:
     basic_pool_async _pool;

@@ -32,10 +32,17 @@
 // Extend std
 namespace std
 {
-    template<typename ...LockArgs>
-    void unlock(LockArgs&&... args)
+    template<typename Lock, typename ...OtherLocks, typename = typename std::enable_if<sizeof...(OtherLocks) == 0>::type>
+    static inline void unlock(Lock& lock)
     {
-        (std::forward<LockArgs>(args).unlock(), ...);
+        lock.unlock();
+    }
+
+    template<typename Lock, typename ...OtherLocks, typename = typename std::enable_if<sizeof...(OtherLocks) != 0>::type>
+    static inline void unlock(Lock& lock, OtherLocks&& ...otherLocks)
+    {
+        lock.unlock();
+        unlock(std::forward<OtherLocks>(otherLocks)...);
     }
 }
 
@@ -60,10 +67,10 @@ using lock_guard = std::lock_guard<mutex>;
 
 struct adopt_lock_t
 {
-    explicit adopt_lock_t() = default;
+    explicit HL_CONSTEVAL adopt_lock_t() = default;
 };
 
-inline constexpr adopt_lock_t adopt_lock;
+HL_INLINE_CONSTEXPR_VARIABLE adopt_lock_t adopt_lock;
 
 class thread_safe_result_iter_lock
 {

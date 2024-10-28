@@ -108,9 +108,7 @@ private:
         value = *reinterpret_cast<T*>(&m_buffer[m_index + sizeof(serialization::metadata::type_chart)]);
         m_index += sizeof(serialization::metadata::type_chart) + sizeof(T);
 
-        // avoid making conversion for single byte types
-        if constexpr (std::is_arithmetic_v<T> && sizeof(T) > 1)
-            bit::network_to_native_inplace(value);
+        bit::network_to_native_inplace(value);
 
         return *this;
     }

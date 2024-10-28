@@ -30,5 +30,7 @@
 // Other: [TYPE][data]
 // All sizes and types that validate std::is_arithmetic_v<T> are in network byte order
 
+#if __cplusplus >= 201703L
 #include <hl/silva/collections/serialization/deserializer.hpp>
 #include <hl/silva/collections/serialization/serializer.hpp>
+#endif
